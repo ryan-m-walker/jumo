@@ -64,8 +64,6 @@ async def chat(input: str):
         system=system_prompt,
     )
 
-    print()
-
     OPEN_TAG = "<emote>"
     CLOSE_TAG = "</emote>"
 
@@ -98,7 +96,6 @@ async def chat(input: str):
 
                     if lookahead_start_slice == OPEN_TAG:
                         if main_buffer:
-                            console.print(main_buffer, end="", style="bold red")
                             main_buffer = ""
                         in_emote = True
                         i += 7
@@ -139,10 +136,7 @@ async def chat(input: str):
                 i += 1
 
     if main_buffer:
-        console.print(main_buffer, end="", style="bold red")
         main_buffer = ""
-
-    print("\n\n")
 
     message_history.append({"role": "assistant", "content": full_buffer})
 
