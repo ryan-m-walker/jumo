@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333" # REST API
+      - "6334:6334" # GRPC API
+    volumes:
+      - qdrant_storate:/qudrant/storage
+    environment:
+      - QDRANT_ALLOW_RESET=true  # Allows collection drops for development
+      - QDRANT_LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  mongodb:
+    image: mongo
+    ports:
+      # IMPORTANT: MAPPING EXTERNAL PORT FROM DIFFERENT PORT NUMBER TO AVOID CONFLICTS WITH LOCAL INSTALL
+      - 27018:27017
+    volumes:
+      - mongodb_data:/data/db
+  # neo4j:
+  #   image: neo4j:latest
+  #   ports:
+  #     - 7474:7474 # HTTP
+  #     - 7687:7687 # BOLT
+  #   environment:
+  #     - NEO4J_AUTH=neo4j/secretgraph
+
+volumes:
+  qdrant_storate:
+  mongodb_data:

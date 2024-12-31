@@ -1,0 +1,19 @@
+[package]
+name = "jumo_tui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7.9"
+color-eyre = "0.6.3"
+crossterm = { version = "0.28.1", features = ["event-stream"] }
+futures = "0.3.31"
+ratatui = "0.29.0"
+tokio = { version = "1.42.0", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.134"
+rand = "0.8.5"
+tokio-tungstenite = "0.26.1"
+futures-util = "0.3.31"
+tokio-stream = "0.1.17"

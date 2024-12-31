@@ -1,0 +1,8 @@
+effects:
+https://github.com/junkdog/tachyonfx/tree/development
+
+websocket:
+https://github.com/snapview/tokio-tungstenite/blob/master/examples/client.rs
+
+input widget:
+https://crates.io/crates/tui-input

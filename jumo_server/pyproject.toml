@@ -1,0 +1,61 @@
+[tool.poetry]
+name = "jumo_server"
+version = "0.1.0"
+description = "The support server of jumo"
+authors = ["Ryan Walker <ryan.matthew.walker@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+mem0ai = {extras = ["graph"], version = "^0.1.36"}
+anthropic = "^0.42.0"
+python-dotenv = "^1.0.1"
+openai = "^1.58.1"
+qdrant-client = "^1.12.1"
+langchain-community = "^0.3.13" # mem0 graph dependency
+rank-bm25 = "^0.2.2" # mem0 graph dependency
+neo4j = "^5.27.0"
+rich = "^13.9.4"
+pymongo = "^4.10.1"
+fastapi = "^0.115.6"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
+websockets = "^14.1"
+
+[tool.poetry.dev-dependencies]
+black = "^24.8.0"
+ruff = "^0.8.4"
+pytest = "^7.4.0"
+pre-commit = "^3.5.0"
+mypy = "^1.14.0"
+pyright = "^1.1.0"
+
+# poetry run uvicorn src.jumo_server.main:app --reload
+
+[tool.pyright]
+exclude = ["**/__pycache__"]
+venv = ".venv"
+venvPath = "."
+reportMissingImports = true
+reportMissingTypeStubs = false
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+follow_imports = "normal"
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

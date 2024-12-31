@@ -1,0 +1,3 @@
+# Jumo
+
+Experiments in AI!

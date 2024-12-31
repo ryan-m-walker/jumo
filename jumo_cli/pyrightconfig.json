@@ -1,0 +1,19 @@
+{
+  "include": [
+    "jumo_body",
+    "jumo_server",
+    "main.py"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    ".git",
+    ".venv"
+  ],
+  "venv": ".venv",
+  "venvPath": ".",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic"
+}

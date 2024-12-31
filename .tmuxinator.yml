@@ -1,0 +1,18 @@
+name: jumo
+root: ~/Documents/coding/jumo/
+
+windows:
+  - editor:
+      layout: even-horizontal
+      panes:
+        - vim
+        - cd ~/Documents/coding/jumo/jumo_term/ && cargo run
+  - servers:
+      layout: even-horizontal
+      panes:
+        - cd ~/Documents/coding/jumo/jumo_server && poetry shell
+        - cd ~/Documents/coding/jumo/jumo_server && poetry run uvicorn src.jumo_server.main:app --reload
+  - dbs:
+      layout: even-horizontal
+      panes:
+        - docker-compose up
