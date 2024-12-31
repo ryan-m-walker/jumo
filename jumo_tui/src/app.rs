@@ -14,7 +14,11 @@ use ratatui::{
 use tokio_stream::StreamExt;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
-use crate::{emotes::get_emote, ServerEvent};
+use crate::{
+    emotes::get_emote,
+    websocket_client::{create_ws_stream, WebSocketMessage},
+    ServerEvent,
+};
 
 pub struct App {
     scroll: usize,
@@ -42,9 +46,7 @@ impl App {
     pub async fn run(&mut self) -> Result<()> {
         let mut terminal = ratatui::init();
 
-        let (mut ws_stream, _) = connect_async("ws://localhost:8000/ws/jumo")
-            .await
-            .expect("Failed to connect to server");
+        let mut ws_stream = create_ws_stream("ws://localhost:8000/ws/jumo".to_string()).await;
 
         self.scroll_state = self
             .scroll_state
@@ -58,7 +60,7 @@ impl App {
             tokio::select! {
                 _ = interval.tick() => { terminal.draw(|frame| self.draw(frame)).unwrap(); },
                 Some(Ok(event)) = events.next() => self.handle_event(&event),
-                Some(Ok(message)) = ws_stream.next() => self.handle_ws_event(&message).await,
+                Some(message) = ws_stream.next() => self.handle_ws_event(&message).await,
             }
         }
 
@@ -82,15 +84,18 @@ impl App {
         self.render_transcript(frame, layout[2]);
     }
 
-    async fn handle_ws_event(&mut self, message: &Message) {
+    async fn handle_ws_event(&mut self, message: &WebSocketMessage) {
         match message {
-            Message::Text(text) => {
+            WebSocketMessage::Text(text) => {
                 if let Ok(server_event) = serde_json::from_str::<ServerEvent>(text.as_str()) {
                     self.handle_server_event(&server_event);
                 }
             }
-            Message::Close(_) => {
+            WebSocketMessage::Disconnected => {
                 self.connected = false;
+            }
+            WebSocketMessage::Reconnected => {
+                self.connected = true;
             }
             _ => {}
         }
@@ -130,12 +135,14 @@ impl App {
     }
 
     fn get_bg_color(&self) -> Color {
-        tailwind::SLATE.c800
+        // tailwind::SLATE.c800
+        tailwind::YELLOW.c300
     }
 
     fn get_fg_color(&self) -> Color {
         if self.connected {
-            tailwind::YELLOW.c300
+            // tailwind::YELLOW.c300
+            tailwind::SLATE.c800
         } else {
             tailwind::SLATE.c500
         }

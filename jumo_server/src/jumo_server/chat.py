@@ -109,8 +109,6 @@ async def chat(input: str):
                         {"type": "NewTextChunk", "content": chunk[i]}
                     )
 
-                    print(main_buffer)
-
                     main_buffer += chunk[i]
 
                 else:

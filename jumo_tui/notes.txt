@@ -6,3 +6,31 @@ https://github.com/snapview/tokio-tungstenite/blob/master/examples/client.rs
 
 input widget:
 https://crates.io/crates/tui-input
+
+Wrapped text line count:
+
+```
+use ratatui::prelude::*;
+use textwrap::core::Word;
+
+fn calculate_wrapped_lines(text: &str, width: u16) -> usize {
+    // Create a dummy buffer just to calculate wrapping
+    let area = Rect::new(0, 0, width, u16::MAX);
+    let text = Text::from(text);
+    let paragraph = Paragraph::new(text);
+    
+    // Get wrapped lines using internal wrapping logic
+    let lines = paragraph.line_count(area);
+    lines
+}
+```
+
+```
+use textwrap::{wrap, Options};
+
+fn calculate_lines_precise(text: &str, width: usize) -> usize {
+    let options = Options::new(width)
+        .word_separator(textwrap::WordSeparator::UnicodeBreakProperties);
+    wrap(text, options).len()
+}
+```

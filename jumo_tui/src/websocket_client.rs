@@ -10,7 +10,6 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 #[derive(Debug)]
 pub enum WebSocketMessage {
     Text(String),
-    Binary(Vec<u8>),
     Disconnected,
     Reconnected,
 }
@@ -54,7 +53,6 @@ pub async fn create_ws_stream(url: String) -> WebSocketStream {
                                     Ok(msg) => {
                                         let ws_msg = match msg {
                                             Message::Text(text) => Some(WebSocketMessage::Text(text.to_string())),
-                                            Message::Binary(data) => Some(WebSocketMessage::Binary(data.to_vec())),
                                             Message::Close(_) => {
                                                 let _ = msg_tx.send(WebSocketMessage::Disconnected).await;
                                                 break;
