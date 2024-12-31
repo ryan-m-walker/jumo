@@ -6,7 +6,7 @@ windows:
       layout: even-horizontal
       panes:
         - vim
-        - cd ~/Documents/coding/jumo/jumo_term/ && cargo run
+        - cd ~/Documents/coding/jumo/jumo_tui/ && cargo run
   - servers:
       layout: even-horizontal
       panes:
