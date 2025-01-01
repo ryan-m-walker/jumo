@@ -26,7 +26,7 @@ const SUNGLASSES: &str = r"
 
 
 ▜█████▛▀▀▀▀▀▜█████▛
- █████       █████ 
+ ▜███▛       ▜███▛
        ▚▄▄▄▞       
 ";
 
@@ -93,16 +93,3 @@ pub fn get_emote(emote: &str) -> &str {
         _ => "???",
     }
 }
-
-pub const ALL_EMOTES: [&str; 10] = [
-    "NEUTRAL_SMILE",
-    "SMILEY",
-    "HAPPY",
-    "SUNGLASSES",
-    "WINK",
-    "NEUTRAL",
-    "EXPRESSIONLESS",
-    "SMILE",
-    "SWEAT_SMILE",
-    "UPSIDE_DOWN",
-];
