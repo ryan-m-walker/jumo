@@ -18,9 +18,10 @@ class EmoteEvent(TypedDict):
 Event = Union[TextEvent, EmoteEvent]
 
 EMOTE_DELAY = 1
-TEXT_DELAY = 0.01
+TEXT_DELAY = 0.02
 
 
+# throttle the output queue so that emotes match up roughly with reading pace
 class OutputQueue:
     def __init__(self):
         self.queue = Queue()

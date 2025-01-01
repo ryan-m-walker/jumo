@@ -73,6 +73,9 @@ async def chat(input: str):
 
     full_buffer = await producer
 
+    await queue.flush()
+    await consumer
+
     message_history.append({"role": "assistant", "content": full_buffer})
 
     messages_collection.insert_one(
@@ -99,9 +102,6 @@ async def chat(input: str):
     except Exception as e:
         print("Unexpected error occurred while adding memory:")
         print(e)
-
-    await queue.flush()
-    await consumer
 
     return {"response": full_buffer}
 
@@ -144,9 +144,6 @@ async def handle_stream(stream, queue):
                         continue
 
                     await queue.put({"type": "NewTextChunk", "content": chunk[i]})
-                    # await event_manager.broadcast_to_all(
-                    #     {"type": "NewTextChunk", "content": chunk[i]}
-                    # )
 
                     main_buffer += chunk[i]
 
