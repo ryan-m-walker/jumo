@@ -11,14 +11,21 @@ use ratatui::{
     },
     Frame,
 };
+use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
-use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 use crate::{
     emotes::get_emote,
     websocket_client::{create_ws_stream, WebSocketMessage},
-    ServerEvent,
 };
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "type")]
+enum ServerEvent {
+    Emote { emote: String },
+    NewMessage,
+    NewTextChunk { content: String },
+}
 
 pub struct App {
     scroll: usize,
@@ -97,7 +104,6 @@ impl App {
             WebSocketMessage::Reconnected => {
                 self.connected = true;
             }
-            _ => {}
         }
     }
 
