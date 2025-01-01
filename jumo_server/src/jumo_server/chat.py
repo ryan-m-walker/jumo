@@ -1,8 +1,10 @@
+import asyncio
 from datetime import datetime
 from jumo_server.llm.llm import anthropic_client
 from jumo_server.events import event_manager
 from jumo_server.memory import memory_client
 
+from jumo_server.output_queue import OutputQueue
 from jumo_server.prompt_composer.agent_info_prompt_composer import (
     AgentInfoPromptComposer,
 )
@@ -18,9 +20,7 @@ from jumo_server.db.mongo import messages_collection
 from jumo_server.prompt_composer.system_info_prompt_composer import (
     SystemInfoPromptComposer,
 )
-from rich.console import Console
 
-console = Console()
 
 user_id = "ryan"
 
@@ -64,79 +64,14 @@ async def chat(input: str):
         system=system_prompt,
     )
 
-    OPEN_TAG = "<emote>"
-    CLOSE_TAG = "</emote>"
-
-    full_buffer = ""
-    main_buffer = ""
-    emote_buffer = ""
-
-    partial_tag = ""
-    in_emote = False
-
     await event_manager.broadcast_to_all({"type": "NewMessage"})
 
-    async for event in stream:
-        if event.type == "content_block_delta":
-            chunk: str = event.delta.text
+    queue = OutputQueue()
 
-            if partial_tag:
-                chunk = partial_tag + chunk
-                partial_tag = ""
+    consumer = asyncio.create_task(queue.start_consuming())
+    producer = asyncio.create_task(handle_stream(stream, queue))
 
-            i = 0
-
-            while i < len(chunk):
-                lookahead_start_slice = chunk[i : len(OPEN_TAG) + i]
-
-                if not in_emote:
-                    if chunk[i] == "<" and len(lookahead_start_slice) < len(OPEN_TAG):
-                        partial_tag = chunk[i:]
-                        break
-
-                    if lookahead_start_slice == OPEN_TAG:
-                        if main_buffer:
-                            main_buffer = ""
-                        in_emote = True
-                        i += 7
-                        full_buffer += "<emote>"
-                        continue
-
-                    await event_manager.broadcast_to_all(
-                        {"type": "NewTextChunk", "content": chunk[i]}
-                    )
-
-                    main_buffer += chunk[i]
-
-                else:
-                    lookahead_end_slice = chunk[i : len(CLOSE_TAG) + i]
-
-                    if len(lookahead_end_slice) < len(CLOSE_TAG):
-                        partial_tag = chunk[i:]
-                        break
-
-                    if chunk[i : i + 8] == "</emote>":
-                        await event_manager.broadcast_to_all(
-                            {"type": "Emote", "emote": emote_buffer.strip()}
-                        )
-                        emote_buffer = ""
-                        in_emote = False
-                        i += 8
-                        full_buffer += "</emote>"
-
-                        # short delay to make the emotes not flash so quickly for fast streaming
-                        # await asyncio.sleep(2)
-
-                        continue
-
-                    emote_buffer += chunk[i]
-
-                full_buffer += chunk[i]
-
-                i += 1
-
-    if main_buffer:
-        main_buffer = ""
+    full_buffer = await producer
 
     message_history.append({"role": "assistant", "content": full_buffer})
 
@@ -165,36 +100,82 @@ async def chat(input: str):
         print("Unexpected error occurred while adding memory:")
         print(e)
 
+    await queue.flush()
+    await consumer
+
     return {"response": full_buffer}
 
 
-def render_emote(emote: str):
-    if len(emote) == 3:
-        emote = " " + emote + " "
-    elif len(emote) == 4:
-        emote = " " + emote
+async def handle_stream(stream, queue):
+    OPEN_TAG = "<emote>"
+    CLOSE_TAG = "</emote>"
 
-    #     console.print(
-    #         f"""\
-    #
-    #   ┌───────┐
-    #   │┌─────┐│
-    #   ││{emote}││
-    #   │└─────┘│
-    #   │       │
-    #   └───────┘
-    #
-    # """,
-    #         end="",
-    #         style="bold red",
-    #     )
+    full_buffer = ""
+    main_buffer = ""
+    emote_buffer = ""
 
-    console.print(
-        f"""\
- ┌─────┐
- │{emote}│
- └─────┘
-""",
-        end="",
-        style="bold red",
-    )
+    partial_tag = ""
+    in_emote = False
+
+    async for event in stream:
+        if event.type == "content_block_delta":
+            chunk: str = event.delta.text
+
+            if partial_tag:
+                chunk = partial_tag + chunk
+                partial_tag = ""
+
+            i = 0
+
+            while i < len(chunk):
+                lookahead_start_slice = chunk[i : len(OPEN_TAG) + i]
+
+                if not in_emote:
+                    if chunk[i] == "<" and len(lookahead_start_slice) < len(OPEN_TAG):
+                        partial_tag = chunk[i:]
+                        break
+
+                    if lookahead_start_slice == OPEN_TAG:
+                        if main_buffer:
+                            main_buffer = ""
+                        in_emote = True
+                        i += 7
+                        full_buffer += "<emote>"
+                        continue
+
+                    await queue.put({"type": "NewTextChunk", "content": chunk[i]})
+                    # await event_manager.broadcast_to_all(
+                    #     {"type": "NewTextChunk", "content": chunk[i]}
+                    # )
+
+                    main_buffer += chunk[i]
+
+                else:
+                    lookahead_end_slice = chunk[i : len(CLOSE_TAG) + i]
+
+                    if len(lookahead_end_slice) < len(CLOSE_TAG):
+                        partial_tag = chunk[i:]
+                        break
+
+                    if chunk[i : i + 8] == "</emote>":
+                        await queue.put(
+                            {"type": "Emote", "emote": emote_buffer.strip()}
+                        )
+
+                        emote_buffer = ""
+                        in_emote = False
+                        i += 8
+                        full_buffer += "</emote>"
+
+                        continue
+
+                    emote_buffer += chunk[i]
+
+                full_buffer += chunk[i]
+
+                i += 1
+
+    if main_buffer:
+        main_buffer = ""
+
+    return full_buffer

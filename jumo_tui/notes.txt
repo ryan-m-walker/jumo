@@ -1,9 +1,6 @@
 effects:
 https://github.com/junkdog/tachyonfx/tree/development
 
-websocket:
-https://github.com/snapview/tokio-tungstenite/blob/master/examples/client.rs
-
 input widget:
 https://crates.io/crates/tui-input
 
@@ -34,3 +31,7 @@ fn calculate_lines_precise(text: &str, width: usize) -> usize {
     wrap(text, options).len()
 }
 ```
+
+Terminal Look:
+
+https://github.com/rricharz/pidp11-2.11bsd/blob/master/Cool.pdf

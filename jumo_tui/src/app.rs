@@ -136,13 +136,19 @@ impl App {
 
     fn get_bg_color(&self) -> Color {
         // tailwind::SLATE.c800
-        tailwind::YELLOW.c300
+        // tailwind::YELLOW.c300
+        // Color::Rgb(100, 111, 139)
+        // Color::Rgb(31, 35, 61)
+        Color::Rgb(39, 49, 56)
     }
 
     fn get_fg_color(&self) -> Color {
         if self.connected {
             // tailwind::YELLOW.c300
-            tailwind::SLATE.c800
+            // tailwind::SLATE.c800
+            // Color::Rgb(139, 252, 253)
+            // Color::Rgb(112, 208, 184)
+            Color::Rgb(180, 234, 227)
         } else {
             tailwind::SLATE.c500
         }
