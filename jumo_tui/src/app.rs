@@ -189,7 +189,7 @@ impl App {
     }
 
     fn render_face(&self, frame: &mut Frame, rect: Rect) {
-        let face_padding = Padding::new(0, 0, rect.height / 2 - 5, 0);
+        let face_padding = Padding::new(0, 0, rect.height.saturating_sub(10).saturating_div(2), 0);
 
         frame.render_widget(
             Paragraph::new(self.get_emote())
