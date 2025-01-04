@@ -1,4 +1,4 @@
-use std::{rc::Rc, time::Duration};
+use std::{fmt::format, rc::Rc, time::Duration};
 
 use textwrap::{wrap, Options};
 
@@ -7,6 +7,7 @@ use crossterm::event::{Event, EventStream, KeyCode};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{palette::tailwind, Color, Style, Stylize},
+    text::Line,
     widgets::{
         Block, BorderType, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
         Wrap,
@@ -27,6 +28,12 @@ enum ServerEvent {
     Emote { emote: String },
     NewMessage,
     NewTextChunk { content: String },
+    ModeChange { mode: String },
+}
+
+enum Mode {
+    Chat,
+    Debug,
 }
 
 pub struct App {
@@ -36,7 +43,9 @@ pub struct App {
     should_quit: bool,
     emote: String,
     connected: bool,
-    transcript_width: u16,
+    transcript_dimensions: Rect,
+    autoscroll: bool,
+    mode: Mode,
 }
 
 impl App {
@@ -50,14 +59,16 @@ impl App {
             should_quit: false,
             emote: "NEUTRAL".to_string(),
             connected: true,
-            transcript_width: 0,
+            transcript_dimensions: Rect::default(),
+            autoscroll: true,
+            mode: Mode::Chat,
         }
     }
 
     pub async fn run(&mut self) -> Result<()> {
         let mut terminal = ratatui::init();
 
-        let mut ws_stream = create_ws_stream("ws://localhost:8000/ws/jumo".to_string()).await;
+        let mut ws_stream = create_ws_stream("ws://10.0.0.224:8000/ws/jumo".to_string()).await;
 
         let period = Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND);
         let mut interval = tokio::time::interval(period);
@@ -76,22 +87,67 @@ impl App {
         Ok(())
     }
 
-    fn get_layout(&self, frame: &Frame) -> Rc<[Rect]> {
+    fn get_layout(&self, rect: &Rect) -> Rc<[Rect]> {
         Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
                 Constraint::Length(3),
-                Constraint::Max(32),
+                Constraint::Max(20),
                 Constraint::Fill(0),
             ])
-            .split(frame.area())
+            .split(*rect)
     }
 
     fn draw(&mut self, frame: &mut Frame) {
-        let layout = self.get_layout(frame);
+        match self.mode {
+            Mode::Chat => self.render_chat(frame),
+            Mode::Debug => self.render_debug(frame),
+        }
+    }
+
+    fn render_chat(&mut self, frame: &mut Frame) {
+        let layout = self.get_layout(&frame.area());
+
+        if self.transcript_dimensions == Rect::default() {
+            self.transcript_dimensions = layout[2];
+        }
+
         self.render_header(frame, layout[0]);
         self.render_face(frame, layout[1]);
         self.render_transcript(frame, layout[2]);
+    }
+
+    fn render_debug(&self, frame: &mut Frame) {
+        let lines = vec![
+            Line::from("Transcript:").style(Style::new().bold()),
+            Line::from("-----------"),
+            Line::from(format!(
+                "Transcript Dimensions: {}x{}",
+                self.transcript_dimensions.width, self.transcript_dimensions.height
+            )),
+            Line::from(format!("Scroll: {}", self.scroll)),
+            Line::from(format!("Autoscroll: {}", self.autoscroll)),
+            Line::from(format!("Line Count: {}", self.get_transcript_line_count())),
+        ];
+
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Length(3), Constraint::Fill(0)])
+            .split(frame.area());
+
+        frame.render_widget(
+            Paragraph::new("Debug Info")
+                .style(Style::new().fg(self.get_fg_color()).bold())
+                .block(self.get_block().padding(Padding::horizontal(1))),
+            layout[0],
+        );
+
+        frame.render_widget(
+            Paragraph::new(lines)
+                .style(Style::new().fg(self.get_fg_color()).bold())
+                .block(self.get_block().padding(Padding::horizontal(1))),
+            layout[1],
+        );
     }
 
     async fn handle_ws_event(&mut self, message: &WebSocketMessage) {
@@ -112,14 +168,31 @@ impl App {
 
     fn handle_server_event(&mut self, event: &ServerEvent) {
         match event {
+            ServerEvent::ModeChange { mode } => match mode.as_str() {
+                "default" => self.mode = Mode::Chat,
+                "debug" => self.mode = Mode::Debug,
+                _ => {}
+            },
             ServerEvent::Emote { emote } => {
                 self.emote = emote.to_string();
             }
             ServerEvent::NewMessage => {
                 self.transcript = String::new();
+                self.autoscroll = true;
+                self.scroll = 0;
+                self.scroll_state = self.scroll_state.position(self.scroll);
             }
             ServerEvent::NewTextChunk { content } => {
                 self.transcript.push_str(content);
+
+                let visible_lines = self.transcript_dimensions.height as usize - 3;
+                let total_lines = self.get_transcript_line_count();
+                let has_overflow = total_lines > visible_lines;
+
+                if has_overflow && self.autoscroll {
+                    self.scroll = total_lines.saturating_sub(visible_lines);
+                    self.scroll_state = self.scroll_state.position(self.scroll);
+                }
             }
         }
     }
@@ -133,22 +206,40 @@ impl App {
                 KeyCode::Char('j') | KeyCode::Down => {
                     self.scroll = self.scroll.saturating_add(1);
                     self.scroll_state = self.scroll_state.position(self.scroll);
+                    self.autoscroll = false;
+                    // TODO: reset autoscroll if at bottom of transcript
                 }
                 KeyCode::Char('k') | KeyCode::Up => {
                     self.scroll = self.scroll.saturating_sub(1);
                     self.scroll_state = self.scroll_state.position(self.scroll);
+                    self.autoscroll = false;
+                }
+                KeyCode::Char('d') => {
+                    if let Mode::Chat = self.mode {
+                        self.mode = Mode::Debug;
+                    } else {
+                        self.mode = Mode::Chat;
+                    }
                 }
                 _ => {}
             }
+        }
+
+        if let Event::Resize(width, height) = event {
+            let frame_area = Rect::new(0, 0, *width, *height);
+            let layout = self.get_layout(&frame_area);
+            let dimensions = &layout[2];
+            self.transcript_dimensions = *dimensions;
         }
     }
 
     fn get_bg_color(&self) -> Color {
         // tailwind::SLATE.c800
+        tailwind::ZINC.c950
         // tailwind::YELLOW.c300
         // Color::Rgb(100, 111, 139)
         // Color::Rgb(31, 35, 61)
-        Color::Rgb(39, 49, 56)
+        // Color::Rgb(39, 49, 56)
     }
 
     fn get_fg_color(&self) -> Color {
@@ -203,15 +294,11 @@ impl App {
         frame.render_widget(
             Paragraph::new(self.transcript.clone())
                 .style(Style::new().fg(self.get_fg_color()).bold())
-                .block(self.get_block().padding(Padding::uniform(1)))
+                .block(self.get_block().padding(Padding::horizontal(1)))
                 .wrap(Wrap { trim: true })
                 .scroll((self.scroll as u16, 0)),
             rect,
         );
-
-        if self.transcript_width != rect.width {
-            self.transcript_width = rect.width;
-        }
 
         frame.render_stateful_widget(
             Scrollbar::new(ScrollbarOrientation::VerticalRight)
@@ -230,7 +317,7 @@ impl App {
     }
 
     fn get_transcript_line_count(&self) -> usize {
-        let options = Options::new(self.transcript_width.into())
+        let options = Options::new(self.transcript_dimensions.width.into())
             .word_separator(textwrap::WordSeparator::UnicodeBreakProperties);
         wrap(&self.transcript, options).len()
     }
