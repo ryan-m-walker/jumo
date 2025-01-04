@@ -1,6 +1,10 @@
 from jumo_server.memory import memory_client
 from .prompt_composer import PromptComposer
 
+from rich.console import Console
+
+console = Console()
+
 
 class MemoryPromptComposer(PromptComposer):
     def __init__(self, query: str, user_id: str):
@@ -17,5 +21,8 @@ class MemoryPromptComposer(PromptComposer):
             output += f"<memory score=\"{m['score']}\" created_at=\"{m['created_at']}\" updated_at=\"{m['updated_at']}\">{m['memory']}</memory>\n"
 
         output += "</memories>\n"
+
+        console.print("[Memories]:", style="bold red")
+        console.print(output, style="bold red")
 
         return output

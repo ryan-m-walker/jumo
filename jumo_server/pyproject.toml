@@ -5,10 +5,11 @@ description = "The support server of jumo"
 authors = ["Ryan Walker <ryan.matthew.walker@gmail.com>"]
 readme = "README.md"
 license = "MIT"
+# packages = [{ inlude = "jumo_server", from = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-mem0ai = {extras = ["graph"], version = "^0.1.36"}
+mem0ai = {extras = ["graph"], version = "^0.1.38"}
 anthropic = "^0.42.0"
 python-dotenv = "^1.0.1"
 openai = "^1.58.1"

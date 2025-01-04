@@ -16,7 +16,6 @@ def open_ai_client():
 
 anthropic = None
 
-
 def anthropic_client():
     global anthropic
 

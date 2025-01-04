@@ -11,6 +11,9 @@ EMOTES = [
     "SMILE",
     "SWEAT_SMILE",
     "UPSIDE_DOWN",
+    "CURIOUS",
+    "THINKING",
+    "CONCERNED",
 ]
 
 

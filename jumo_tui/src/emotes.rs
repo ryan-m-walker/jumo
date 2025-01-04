@@ -78,6 +78,30 @@ const UPSIDE_DOWN: &str = r"
 ▜█▛             ▜█▛
 ";
 
+const THINKING: &str = r"
+▞▀▀▀▀▚              
+                    
+ ▀▀▀▀           ▀▀▀▀
+
+        ▄▄▄▄▄       
+";
+
+const CURIOUS: &str = r"
+▞▀▀▀▀▚         ▞▀▀▀▀▚
+                  
+ ▀▀▀▀           ▀▀▀▀
+
+        ▄▄▄▄▄       
+";
+
+const CONCERNED: &str = r"
+
+▟█▙             ▟█▙
+▜█▛             ▜█▛
+
+       ▞▀▀▀▚       
+";
+
 pub fn get_emote(emote: &str) -> &str {
     match emote {
         "NEUTRAL_SMILE" => NEUTRAL_SMILE,
@@ -87,9 +111,14 @@ pub fn get_emote(emote: &str) -> &str {
         "WINK" => WINK,
         "NEUTRAL" => NEUTRAL,
         "EXPRESSIONLESS" => EXPRESSIONLESS,
+        "THINKING" => THINKING,
         "SMILE" => SMILE,
+        // TODO: maybe make a unique one for this
+        "EXCITED" => SMILE,
         "SWEAT_SMILE" => SWEAT_SMILE,
         "UPSIDE_DOWN" => UPSIDE_DOWN,
+        "CURIOUS" => CURIOUS,
+        "CONCERNED" => CONCERNED,
         _ => "???",
     }
 }

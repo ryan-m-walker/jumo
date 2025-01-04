@@ -4,6 +4,7 @@ from jumo_server.llm.llm import anthropic_client
 from jumo_server.events import event_manager
 from jumo_server.memory import memory_client
 
+from jumo_server.tools import ReflectionTool
 from jumo_server.output_queue import OutputQueue
 from jumo_server.prompt_composer.agent_info_prompt_composer import (
     AgentInfoPromptComposer,
@@ -62,6 +63,7 @@ async def chat(input: str):
         messages=message_history,
         max_tokens=2024,
         system=system_prompt,
+        # tools=[ReflectionTool()],
     )
 
     await event_manager.broadcast_to_all({"type": "NewMessage"})
@@ -96,12 +98,12 @@ async def chat(input: str):
         }
     )
 
-    try:
-        memory_client().add("User query: " + query, user_id=user_id)
-        memory_client().add("Jumo response: " + full_buffer, user_id=user_id)
-    except Exception as e:
-        print("Unexpected error occurred while adding memory:")
-        print(e)
+    # try:
+    memory_client().add("User query: " + query, user_id=user_id)
+    memory_client().add("Jumo response: " + full_buffer, user_id=user_id)
+    # except Exception as e:
+    #     print("Unexpected error occurred while adding memory:")
+    #     print(e)
 
     return {"response": full_buffer}
 
@@ -128,7 +130,7 @@ async def handle_stream(stream, queue):
             i = 0
 
             while i < len(chunk):
-                lookahead_start_slice = chunk[i : len(OPEN_TAG) + i]
+                lookahead_start_slice = chunk[i: len(OPEN_TAG) + i]
 
                 if not in_emote:
                     if chunk[i] == "<" and len(lookahead_start_slice) < len(OPEN_TAG):
@@ -148,13 +150,13 @@ async def handle_stream(stream, queue):
                     main_buffer += chunk[i]
 
                 else:
-                    lookahead_end_slice = chunk[i : len(CLOSE_TAG) + i]
+                    lookahead_end_slice = chunk[i: len(CLOSE_TAG) + i]
 
                     if len(lookahead_end_slice) < len(CLOSE_TAG):
                         partial_tag = chunk[i:]
                         break
 
-                    if chunk[i : i + 8] == "</emote>":
+                    if chunk[i: i + 8] == "</emote>":
                         await queue.put(
                             {"type": "Emote", "emote": emote_buffer.strip()}
                         )

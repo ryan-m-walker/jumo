@@ -1,4 +1,6 @@
-use std::time::Duration;
+use std::{rc::Rc, time::Duration};
+
+use textwrap::{wrap, Options};
 
 use color_eyre::eyre::Result;
 use crossterm::event::{Event, EventStream, KeyCode};
@@ -30,10 +32,11 @@ enum ServerEvent {
 pub struct App {
     scroll: usize,
     scroll_state: ScrollbarState,
-    transcript: Vec<String>,
+    transcript: String,
     should_quit: bool,
     emote: String,
     connected: bool,
+    transcript_width: u16,
 }
 
 impl App {
@@ -43,10 +46,11 @@ impl App {
         Self {
             scroll: 0,
             scroll_state: ScrollbarState::default(),
-            transcript: vec![],
+            transcript: String::new(),
             should_quit: false,
             emote: "NEUTRAL".to_string(),
             connected: true,
+            transcript_width: 0,
         }
     }
 
@@ -54,10 +58,6 @@ impl App {
         let mut terminal = ratatui::init();
 
         let mut ws_stream = create_ws_stream("ws://localhost:8000/ws/jumo".to_string()).await;
-
-        self.scroll_state = self
-            .scroll_state
-            .content_length(self.transcript.join("\n").len());
 
         let period = Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND);
         let mut interval = tokio::time::interval(period);
@@ -76,16 +76,19 @@ impl App {
         Ok(())
     }
 
-    fn draw(&mut self, frame: &mut Frame) {
-        let layout = Layout::default()
+    fn get_layout(&self, frame: &Frame) -> Rc<[Rect]> {
+        Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
                 Constraint::Length(3),
                 Constraint::Max(32),
                 Constraint::Fill(0),
             ])
-            .split(frame.area());
+            .split(frame.area())
+    }
 
+    fn draw(&mut self, frame: &mut Frame) {
+        let layout = self.get_layout(frame);
         self.render_header(frame, layout[0]);
         self.render_face(frame, layout[1]);
         self.render_transcript(frame, layout[2]);
@@ -113,10 +116,10 @@ impl App {
                 self.emote = emote.to_string();
             }
             ServerEvent::NewMessage => {
-                self.transcript = vec![];
+                self.transcript = String::new();
             }
             ServerEvent::NewTextChunk { content } => {
-                self.transcript.push(content.to_string());
+                self.transcript.push_str(content);
             }
         }
     }
@@ -150,11 +153,11 @@ impl App {
 
     fn get_fg_color(&self) -> Color {
         if self.connected {
-            // tailwind::YELLOW.c300
+            tailwind::YELLOW.c300
             // tailwind::SLATE.c800
             // Color::Rgb(139, 252, 253)
             // Color::Rgb(112, 208, 184)
-            Color::Rgb(180, 234, 227)
+            // Color::Rgb(180, 234, 227)
         } else {
             tailwind::SLATE.c500
         }
@@ -168,9 +171,17 @@ impl App {
         }
     }
 
+    fn get_status(&self) -> &str {
+        if self.connected {
+            "Online"
+        } else {
+            "Offline"
+        }
+    }
+
     fn render_header(&self, frame: &mut Frame, rect: Rect) {
         frame.render_widget(
-            Paragraph::new(format!(" JUMO - v0.1.0 - Connected: {}", self.connected))
+            Paragraph::new(format!(" JUMO - v0.1.0 - Status: {}", self.get_status()))
                 .style(Style::new().fg(self.get_fg_color()).bold())
                 .block(self.get_block()),
             rect,
@@ -188,15 +199,19 @@ impl App {
         );
     }
 
-    fn render_transcript(&self, frame: &mut Frame, rect: Rect) {
+    fn render_transcript(&mut self, frame: &mut Frame, rect: Rect) {
         frame.render_widget(
-            Paragraph::new(self.transcript.join(""))
+            Paragraph::new(self.transcript.clone())
                 .style(Style::new().fg(self.get_fg_color()).bold())
                 .block(self.get_block().padding(Padding::uniform(1)))
                 .wrap(Wrap { trim: true })
                 .scroll((self.scroll as u16, 0)),
             rect,
         );
+
+        if self.transcript_width != rect.width {
+            self.transcript_width = rect.width;
+        }
 
         frame.render_stateful_widget(
             Scrollbar::new(ScrollbarOrientation::VerticalRight)
@@ -212,5 +227,11 @@ impl App {
         Block::bordered()
             .style(Style::new().fg(self.get_fg_color()).bg(self.get_bg_color()))
             .border_type(BorderType::Rounded)
+    }
+
+    fn get_transcript_line_count(&self) -> usize {
+        let options = Options::new(self.transcript_width.into())
+            .word_separator(textwrap::WordSeparator::UnicodeBreakProperties);
+        wrap(&self.transcript, options).len()
     }
 }

@@ -35,3 +35,9 @@ fn calculate_lines_precise(text: &str, width: usize) -> usize {
 Terminal Look:
 
 https://github.com/rricharz/pidp11-2.11bsd/blob/master/Cool.pdf
+
+
+
+ascii art:
+https://www.asciiart.eu/image-to-ascii
+

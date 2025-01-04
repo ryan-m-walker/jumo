@@ -20,7 +20,8 @@ async def root():
 @app.get("/transcript")
 async def transcript():
     messages = (
-        messages_collection.find({}).limit(10).sort([("created_at", -1)]).to_list()
+        messages_collection.find({}).limit(
+            10).sort([("created_at", -1)]).to_list()
     )
 
     # stringify the ObjectId
@@ -31,17 +32,16 @@ async def transcript():
 
 
 @app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await event_manager.connect(websocket, client_id)
+async def websocket_endpoint(websocket: WebSocket):
+    await event_manager.connect(websocket)
 
     try:
         while True:
             # Keep the connection alive and handle any incoming messages
             _ = await websocket.receive_text()
-            # You can process incoming messages here if needed
 
     except WebSocketDisconnect:
-        await event_manager.disconnect(websocket, client_id)
+        await event_manager.disconnect(websocket)
 
 
 @app.post("/chat")

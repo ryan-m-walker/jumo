@@ -3,6 +3,12 @@ from mem0 import Memory
 
 config = {
     "version": "v1.1",
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "model": "gpt-3.5-turbo",
+        },
+    },
     "vector_store": {
         "provider": "qdrant",
         "config": {

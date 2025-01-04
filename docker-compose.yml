@@ -23,14 +23,24 @@ services:
       - 27018:27017
     volumes:
       - mongodb_data:/data/db
-  # neo4j:
-  #   image: neo4j:latest
-  #   ports:
-  #     - 7474:7474 # HTTP
-  #     - 7687:7687 # BOLT
-  #   environment:
-  #     - NEO4J_AUTH=neo4j/secretgraph
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j-apoc
+    ports:
+      - "7474:7474" # HTTP
+      - "7687:7687" # BOLT
+    volumes:
+      - neo4j_data:/data
+      - neo4j_plugins:/plugins
+    environment:
+      - NEO4J_AUTH=neo4j/secretgraph
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4JLABS_PLUGINS=["apoc"]
 
 volumes:
   qdrant_storate:
   mongodb_data:
+  neo4j_data:
+  neo4j_plugins:

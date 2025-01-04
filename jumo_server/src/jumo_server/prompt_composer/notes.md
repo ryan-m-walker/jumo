@@ -97,4 +97,6 @@ Emote attribute ideas (from jumo):
  - Have some way to "reflect" on memories and learn from them            
 
 
+JUMO BUILD OUTPUT HERE:
 
+pwd = /Users/ryan/Documents/coding/jumo/jumo_tui
