@@ -76,7 +76,7 @@ impl App {
 
         while !self.should_quit {
             tokio::select! {
-                _ = interval.tick() => { terminal.draw(|frame| self.draw(frame)).unwrap(); },
+                _ = interval.tick() => { terminal.draw(|frame| self.draw(frame))?; },
                 Some(Ok(event)) = events.next() => self.handle_event(&event),
                 Some(message) = ws_stream.next() => self.handle_ws_event(&message).await,
             }
@@ -185,7 +185,7 @@ impl App {
             ServerEvent::NewTextChunk { content } => {
                 self.transcript.push_str(content);
 
-                let visible_lines = self.transcript_dimensions.height as usize - 3;
+                let visible_lines = self.transcript_dimensions.height as usize - 4;
                 let total_lines = self.get_transcript_line_count();
                 let has_overflow = total_lines > visible_lines;
 

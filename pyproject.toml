@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "jumo"
+version = "0.1.0"
+description = "The AI friend!"
+authors = ["Ryan Walker <ryan.matthew.walker@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+jumo_server = {path = "./jumo_server"}
+jumo_cli = {path = "./jumo_cli"}
+anthropic = "^0.42.0"
+openai = "^1.59.3"

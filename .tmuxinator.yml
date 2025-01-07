@@ -1,5 +1,5 @@
 name: jumo
-root: ~/Documents/coding/jumo/
+root: ~/jumo/
 
 windows:
   - editor:
@@ -9,9 +9,9 @@ windows:
   - servers:
       layout: even-horizontal
       panes:
-        - cd ~/Documents/coding/jumo/jumo_cli && poetry run python src/jumo_cli/main.py
-        - cd ~/Documents/coding/jumo/jumo_tui/ && cargo run
-        - cd ~/Documents/coding/jumo/jumo_server && poetry run uvicorn src.jumo_server.main:app --reload
+        - cd ~/jumo/jumo_cli_rs && cargo run
+        - cd ~/jumo/jumo_tui/ && cargo run
+        - cd ~/jumo/jumo_server && poetry run fastapi dev src/jumo_server/main.py --host 10.0.0.224 --port 8000
   - dbs:
       layout: even-horizontal
       panes:

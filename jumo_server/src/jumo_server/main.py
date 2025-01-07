@@ -2,7 +2,8 @@ from dotenv import load_dotenv
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
-from jumo_server.chat import chat
+from jumo_server.memory import memory_client
+from jumo_server.chat import chat, user_id
 from jumo_server.db.mongo import messages_collection
 from jumo_server.events import event_manager
 
@@ -47,3 +48,7 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/chat")
 async def send_chat_message(body: dict):
     return await chat(body["input"])
+
+@app.post("/memories/test")
+async def test_memory(body: dict):
+    return memory_client().search(query = body["query"], user_id=user_id)

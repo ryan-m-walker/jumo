@@ -15,7 +15,7 @@ def main():
         if query.strip() == "":
             continue
 
-        res = requests.post("http://localhost:8000/chat", json={"input": query})
+        res = requests.post("http://10.0.0.224:8000/chat", json={"input": query})
 
         console.print("[Jumo]: ", style="bold red", end="")
         print(res.json()["response"])

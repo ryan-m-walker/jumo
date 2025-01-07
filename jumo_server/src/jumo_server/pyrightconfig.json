@@ -1,0 +1,13 @@
+{
+    "venvPath": ".",
+    "venv": ".venv",
+    "extraPaths": [
+        "jumo_server",
+        "jumo_cli"
+    ],
+    "include": [
+        "jumo_server",
+        "jumo_cli"
+    ],
+    "typeCheckingMode": "basic",
+}

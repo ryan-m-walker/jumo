@@ -1,10 +1,15 @@
 import asyncio
+from collections.abc import Iterable
 from datetime import datetime
+
+from anthropic import AsyncStream
+from anthropic.types.message_param import MessageParam
+from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
+from anthropic.types.tool_param import ToolParam
 from jumo_server.llm.llm import anthropic_client
 from jumo_server.events import event_manager
 from jumo_server.memory import memory_client
 
-from jumo_server.tools import ReflectionTool
 from jumo_server.output_queue import OutputQueue
 from jumo_server.prompt_composer.agent_info_prompt_composer import (
     AgentInfoPromptComposer,
@@ -21,9 +26,14 @@ from jumo_server.db.mongo import messages_collection
 from jumo_server.prompt_composer.system_info_prompt_composer import (
     SystemInfoPromptComposer,
 )
+from jumo_server.tools.set_mode import SetModeTool
 
 
 user_id = "ryan"
+
+tools  = [
+    SetModeTool()
+]
 
 
 async def chat(input: str):
@@ -37,7 +47,7 @@ async def chat(input: str):
         {"user_id": user_id}, sort=[("created_at", -1)], limit=50
     )
 
-    message_history = [
+    message_history: Iterable[MessageParam] = [
         {"role": msg["role"], "content": msg["content"]}
         for msg in reversed(list(recent_messages))
     ]
@@ -57,13 +67,16 @@ async def chat(input: str):
 
     system_prompt = prompt_composer.compose()
 
+    # tools: Iterable[ToolParam] = tools.map(lambda tool: tool.json())
+
+
     stream = await anthropic_client().messages.create(
         model="claude-3-5-sonnet-latest",
         stream=True,
         messages=message_history,
         max_tokens=2024,
         system=system_prompt,
-        # tools=[ReflectionTool()],
+        tools=[tool.json() for tool in tools],
     )
 
     await event_manager.broadcast_to_all({"type": "NewMessage"})
@@ -98,17 +111,17 @@ async def chat(input: str):
         }
     )
 
-    # try:
-    memory_client().add("User query: " + query, user_id=user_id)
-    memory_client().add("Jumo response: " + full_buffer, user_id=user_id)
-    # except Exception as e:
-    #     print("Unexpected error occurred while adding memory:")
-    #     print(e)
+    try:
+        memory_client().add("User query: " + query, user_id=user_id)
+        memory_client().add("Jumo response: " + full_buffer, user_id=user_id)
+    except Exception as e:
+        print("Unexpected error occurred while adding memory:")
+        print(e)
 
     return {"response": full_buffer}
 
 
-async def handle_stream(stream, queue):
+async def handle_stream(stream: AsyncStream[RawMessageStreamEvent], queue: OutputQueue):
     OPEN_TAG = "<emote>"
     CLOSE_TAG = "</emote>"
 
@@ -119,62 +132,84 @@ async def handle_stream(stream, queue):
     partial_tag = ""
     in_emote = False
 
+    tool_id: str | None = None
+    tool_name: str | None = None
+    json_buffer = ""
+
     async for event in stream:
+        if event.type == 'content_block_start':
+            if event.content_block.type == 'tool_use':
+                tool_id = event.content_block.id
+                tool_name = event.content_block.name
+
         if event.type == "content_block_delta":
-            chunk: str = event.delta.text
 
-            if partial_tag:
-                chunk = partial_tag + chunk
-                partial_tag = ""
+            if event.delta.type == "text_delta":
+                chunk = event.delta.text
 
-            i = 0
+                if partial_tag:
+                    chunk = partial_tag + chunk
+                    partial_tag = ""
 
-            while i < len(chunk):
-                lookahead_start_slice = chunk[i: len(OPEN_TAG) + i]
+                i = 0
 
-                if not in_emote:
-                    if chunk[i] == "<" and len(lookahead_start_slice) < len(OPEN_TAG):
-                        partial_tag = chunk[i:]
-                        break
+                while i < len(chunk):
+                    lookahead_start_slice = chunk[i: len(OPEN_TAG) + i]
 
-                    if lookahead_start_slice == OPEN_TAG:
-                        if main_buffer:
-                            main_buffer = ""
-                        in_emote = True
-                        i += 7
-                        full_buffer += "<emote>"
-                        continue
+                    if not in_emote:
+                        if chunk[i] == "<" and len(lookahead_start_slice) < len(OPEN_TAG):
+                            partial_tag = chunk[i:]
+                            break
 
-                    await queue.put({"type": "NewTextChunk", "content": chunk[i]})
+                        if lookahead_start_slice == OPEN_TAG:
+                            if main_buffer:
+                                main_buffer = ""
+                            in_emote = True
+                            i += 7
+                            full_buffer += "<emote>"
+                            continue
 
-                    main_buffer += chunk[i]
+                        await queue.put({"type": "NewTextChunk", "content": chunk[i]})
 
-                else:
-                    lookahead_end_slice = chunk[i: len(CLOSE_TAG) + i]
+                        main_buffer += chunk[i]
 
-                    if len(lookahead_end_slice) < len(CLOSE_TAG):
-                        partial_tag = chunk[i:]
-                        break
+                    else:
+                        lookahead_end_slice = chunk[i: len(CLOSE_TAG) + i]
 
-                    if chunk[i: i + 8] == "</emote>":
-                        await queue.put(
-                            {"type": "Emote", "emote": emote_buffer.strip()}
-                        )
+                        if len(lookahead_end_slice) < len(CLOSE_TAG):
+                            partial_tag = chunk[i:]
+                            break
 
-                        emote_buffer = ""
-                        in_emote = False
-                        i += 8
-                        full_buffer += "</emote>"
+                        if chunk[i: i + 8] == "</emote>":
+                            await queue.put(
+                                {"type": "Emote", "emote": emote_buffer.strip()}
+                            )
 
-                        continue
+                            emote_buffer = ""
+                            in_emote = False
+                            i += 8
+                            full_buffer += "</emote>"
 
-                    emote_buffer += chunk[i]
+                            continue
 
-                full_buffer += chunk[i]
+                        emote_buffer += chunk[i]
 
-                i += 1
+                    full_buffer += chunk[i]
+
+                    i += 1
+            else:
+                event.delta
+                json_buffer += event.delta.partial_json
 
     if main_buffer:
         main_buffer = ""
+
+    if tool_id and tool_name:
+        tool_instance = next((tool for tool in tools if tool.json()["name"] == tool_name), None)
+
+        # TODO: reprompt with tool result message
+        # TODO: error handling
+        if tool_instance:
+            await tool_instance.execute(json_buffer)
 
     return full_buffer
