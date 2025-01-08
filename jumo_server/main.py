@@ -92,5 +92,5 @@ async def embedding_search(body: dict):
 @app.post('/memory/create')
 async def memory_create(body: dict):
     print(body['input'])
-    messages = await get_messages(limit=10)
+    messages = get_messages(limit=50)
     return await memory_manager.process_batch(messages)

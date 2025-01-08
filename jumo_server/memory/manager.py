@@ -1,7 +1,10 @@
 from typing import List
+import uuid
 
 
 from jumo_server.db.messages import Message
+from jumo_server.db.qdrant import insert_vector
+from jumo_server.embeddings import create_embedding
 from jumo_server.llm.llm import anthropic_client
 from jumo_server.memory.prompts import MEMORY_PROMPT
 
@@ -45,8 +48,21 @@ class MemoryManager:
 
                 }
             ]
-       )
+        )
 
-        return result.content
+        tool_call = next((block for block in result.content if block.type == "tool_use"), None)
+
+        if tool_call is not None:
+            memories = tool_call.input['memories']
+            
+            for memory in memories:
+                embedding = await create_embedding(memory)
+                id = str(uuid.uuid4())
+                await insert_vector(vector_id=id, vector=embedding, text=memory)
+
+        return {"ok": True}
+
+
+
 
 memory_manager = MemoryManager()

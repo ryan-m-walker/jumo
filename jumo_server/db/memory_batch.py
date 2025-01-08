@@ -1,9 +1,7 @@
 import asyncio
 from datetime import datetime
 from typing import List, Literal
-from pydantic import BaseModel, Field
-from bson import ObjectId
-from pymongo.synchronous.collection import Collection
+from pydantic import BaseModel
 
 from jumo_server.db.mongo import db
 from jumo_server.db.messages import Message

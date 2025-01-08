@@ -1,15 +1,23 @@
 [tool.poetry]
 name = "jumo"
 version = "0.1.0"
-description = "The AI friend!"
-authors = ["Ryan Walker <ryan.matthew.walker@gmail.com>"]
+description = ""
+authors = ["ryan-m-walker <ryan.matthew.walker@gmail.com>"]
 readme = "README.md"
-license = "MIT"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
-jumo_server = {path = "./jumo_server"}
-jumo_cli = {path = "./jumo_cli"}
 anthropic = "^0.42.0"
-openai = "^1.59.3"
+openai = "^1.59.4"
+fastapi = {extras = ["standard"], version = "^0.115.6"}
+bson = "^0.5.10"
+pymongo = "^4.10.1"
 qdrant-client = "^1.12.2"
+load-dotenv = "^0.1.0"
+mem0ai = {extras = ["graph"], version = "^0.1.40"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

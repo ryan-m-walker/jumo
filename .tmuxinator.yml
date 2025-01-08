@@ -10,8 +10,7 @@ windows:
       layout: even-horizontal
       panes:
         - cd ~/jumo/jumo_cli_rs && cargo run
-        - cd ~/jumo/jumo_tui/ && cargo run
-        - cd ~/jumo/jumo_server && poetry run fastapi dev src/jumo_server/main.py --host 10.0.0.224 --port 8000
+        - cd poetry run fastapi dev src/jumo_server/main.py --host 10.0.0.224 --port 8000
   - dbs:
       layout: even-horizontal
       panes:

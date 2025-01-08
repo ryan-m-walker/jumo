@@ -13,5 +13,5 @@ class Message(BaseModel):
 def save_message(message: Message):
     messages_collection.insert_one(message.model_dump())
 
-async def get_messages(limit: int):
-    return [Message(**message) for message in messages_collection.find({}).limit(limit).sort([("created_at", -1)])]
+def get_messages(limit: int):
+    return messages_collection.find({}).limit(limit).sort([("created_at", -1)])

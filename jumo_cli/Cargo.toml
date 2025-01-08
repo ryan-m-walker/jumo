@@ -1,5 +1,5 @@
 [package]
-name = "jumo_cli_rs"
+name = "jumo_cli"
 version = "0.1.0"
 edition = "2021"
 
