@@ -5,7 +5,7 @@ windows:
   - editor:
       layout: even-horizontal
       panes:
-        - vim
+        - poetry run nvim
   - servers:
       layout: even-horizontal
       panes:

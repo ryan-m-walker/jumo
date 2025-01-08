@@ -1,12 +1,14 @@
 from mem0 import Memory
 
+from jumo_server.prompts import MEMORY_EXTRACTION_PROMPT
+
 
 config = {
     "version": "v1.1",
     "llm": {
-        "provider": "openai",
+        "provider": "anthropic",
         "config": {
-            "model": "gpt-3.5-turbo",
+            "model": "claude-3-5-sonnet-latest",
         },
     },
     "vector_store": {
@@ -16,6 +18,7 @@ config = {
             "port": 6333,
         },
     },
+    "custom_prompt": MEMORY_EXTRACTION_PROMPT,
     # "graph_store": {
     #     "provider": "neo4j",
     #     "config": {

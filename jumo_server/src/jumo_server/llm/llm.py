@@ -1,15 +1,15 @@
-from openai import OpenAI
+from openai import AsyncOpenAI
 from anthropic import AsyncAnthropic
 
 
 openai = None
 
 
-def open_ai_client():
+def openai_client():
     global openai
 
     if openai is None:
-        openai = OpenAI()
+        openai = AsyncOpenAI()
 
     return openai
 

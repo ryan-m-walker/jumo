@@ -6,6 +6,7 @@ from anthropic import AsyncStream
 from anthropic.types.message_param import MessageParam
 from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
 from anthropic.types.tool_param import ToolParam
+from jumo_server.db.memory_batch import add_message_to_batch
 from jumo_server.llm.llm import anthropic_client
 from jumo_server.events import event_manager
 from jumo_server.memory import memory_client
@@ -22,7 +23,7 @@ from jumo_server.prompt_composer.personality_prompt_composer import (
 )
 from jumo_server.prompt_composer.root_prompt_composer import RootPromptComposer
 
-from jumo_server.db.mongo import messages_collection
+from jumo_server.db.messages import Message, messages_collection, save_message
 from jumo_server.prompt_composer.system_info_prompt_composer import (
     SystemInfoPromptComposer,
 )
@@ -93,30 +94,55 @@ async def chat(input: str):
 
     message_history.append({"role": "assistant", "content": full_buffer})
 
-    messages_collection.insert_one(
-        {
-            "user_id": user_id,
-            "role": "user",
-            "content": query,
-            "created_at": datetime.now(),
-        }
+    input_message = Message(
+        user_id=user_id,
+        role="user",
+        content=query,
+        created_at=datetime.now()
     )
 
-    messages_collection.insert_one(
-        {
-            "user_id": user_id,
-            "role": "assistant",
-            "content": full_buffer,
-            "created_at": datetime.now(),
-        }
+    output_message = Message(
+        user_id=user_id,
+        role="assistant",
+        content=full_buffer,
+        created_at=datetime.now()
     )
 
-    try:
-        memory_client().add("User query: " + query, user_id=user_id)
-        memory_client().add("Jumo response: " + full_buffer, user_id=user_id)
-    except Exception as e:
-        print("Unexpected error occurred while adding memory:")
-        print(e)
+    save_message(input_message)
+    await add_message_to_batch(input_message)
+
+    save_message(output_message)
+    await add_message_to_batch(output_message)
+
+
+
+    # messages_collection.insert_one(
+    #     {
+    #         "user_id": user_id,
+    #         "role": "user",
+    #         "content": query,
+    #         "created_at": datetime.now(),
+    #     }
+    # )
+
+    # save_message({
+    #     ""
+    # })
+    # messages_collection.insert_one(
+    #     {
+    #         "user_id": user_id,
+    #         "role": "assistant",
+    #         "content": full_buffer,
+    #         "created_at": datetime.now(),
+    #     }
+    # )
+
+    # try:
+    #     memory_client().add("User query: " + query, user_id=user_id)
+    #     memory_client().add("Jumo response: " + full_buffer, user_id=user_id)
+    # except Exception as e:
+    #     print("Unexpected error occurred while adding memory:")
+    #     print(e)
 
     return {"response": full_buffer}
 

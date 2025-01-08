@@ -12,3 +12,4 @@ jumo_server = {path = "./jumo_server"}
 jumo_cli = {path = "./jumo_cli"}
 anthropic = "^0.42.0"
 openai = "^1.59.3"
+qdrant-client = "^1.12.2"
