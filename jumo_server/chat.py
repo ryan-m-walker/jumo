@@ -5,11 +5,9 @@ from datetime import datetime
 from anthropic import AsyncStream
 from anthropic.types.message_param import MessageParam
 from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
-from anthropic.types.tool_param import ToolParam
-from jumo_server.db.memory_batch import add_message_to_batch
 from jumo_server.llm.llm import anthropic_client
 from jumo_server.events import event_manager
-from jumo_server.memory import memory_client
+from jumo_server.memory.manager import memory_manager
 
 from jumo_server.output_queue import OutputQueue
 from jumo_server.prompt_composer.agent_info_prompt_composer import (
@@ -44,14 +42,23 @@ async def chat(input: str):
     if query == "":
         return ""
 
-    recent_messages = messages_collection.find(
+    recent_messages = await messages_collection.find(
         {"user_id": user_id}, sort=[("created_at", -1)], limit=50
-    )
+    ).to_list()
 
-    message_history: Iterable[MessageParam] = [
-        {"role": msg["role"], "content": msg["content"]}
-        for msg in reversed(list(recent_messages))
-    ]
+    message_history: Iterable[MessageParam] = []
+
+    for msg in reversed(list(recent_messages)):
+        message_history.append({
+            "role": msg["role"],
+            "content": msg["content"]
+        })
+
+
+    # message_history: Iterable[MessageParam] = [
+    #     {"role": msg["role"], "content": msg["content"]}
+    #     for msg in reversed(list(recent_messages))
+    # ]
 
     message_history.append({"role": "user", "content": query})
 
@@ -108,41 +115,10 @@ async def chat(input: str):
         created_at=datetime.now()
     )
 
-    save_message(input_message)
-    await add_message_to_batch(input_message)
+    await save_message(input_message)
+    await save_message(output_message)
 
-    save_message(output_message)
-    await add_message_to_batch(output_message)
-
-
-
-    # messages_collection.insert_one(
-    #     {
-    #         "user_id": user_id,
-    #         "role": "user",
-    #         "content": query,
-    #         "created_at": datetime.now(),
-    #     }
-    # )
-
-    # save_message({
-    #     ""
-    # })
-    # messages_collection.insert_one(
-    #     {
-    #         "user_id": user_id,
-    #         "role": "assistant",
-    #         "content": full_buffer,
-    #         "created_at": datetime.now(),
-    #     }
-    # )
-
-    # try:
-    #     memory_client().add("User query: " + query, user_id=user_id)
-    #     memory_client().add("Jumo response: " + full_buffer, user_id=user_id)
-    # except Exception as e:
-    #     print("Unexpected error occurred while adding memory:")
-    #     print(e)
+    await memory_manager.process_exchange([input_message, output_message])
 
     return {"response": full_buffer}
 

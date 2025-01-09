@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
+from jumo_server.db import memory_processing_queue
 from jumo_server.db.qdrant import initialize_qdrant_client, insert_vector, search_vector
 from jumo_server.db.messages import get_messages
 from jumo_server.embeddings import create_embedding
@@ -20,6 +21,7 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await initialize_qdrant_client()
+    await memory_processing_queue.init()
     yield
 
 

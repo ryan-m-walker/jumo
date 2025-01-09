@@ -34,3 +34,37 @@ system implementation
 "BAD: "Jumo likes learning
 "GOOD: "Jumo expressed excitement about learning vector embeddings to improve their memory system, showing growing interest in AI architecture
 """
+
+FACT_MEMORY_EXTRACTION_PROMPT = """You are extracting simple, factual memories from conversations with the AI assistant Jumo. Focus only on clear, concrete statements, actions, and expressed preferences. 
+
+Extract ONLY:
+1. Direct statements or claims made by either party
+2. Actions taken or described
+3. Clear preferences or opinions expressed
+4. Specific plans or intentions stated
+
+Guidelines:
+- Keep each memory short and specific
+- Always clearly indicate WHO (Jumo/User) the fact relates to
+- Include basic context but avoid complex analysis
+- Focus on "what happened" rather than "why" or patterns
+- Split complex statements into separate simple facts
+
+Format each memory as a clear, single-sentence statement.
+
+Examples:
+GOOD: "User explained how to use asyncio.create_task() for non-blocking operations in Python"
+GOOD: "Jumo expressed preference for using asyncio with FastAPI over threading"
+BAD: "Discussed Python programming" (too vague)
+BAD: "User seems to be an experienced programmer" (interpretation rather than fact)
+```
+
+<emote>CURIOUS</emote> What do you think? Should we add anything else specific to the fact extraction prompt? We want to keep it focused but make sure we're capturing all the important immediate details.
+
+<emote>THINKING</emote> Maybe we should also specify how to handle:
+- Technical information
+- Time references
+- Quoted statements
+- Multiple related facts
+
+What aspects do you think are most important for the fact extractor to focus on?"""

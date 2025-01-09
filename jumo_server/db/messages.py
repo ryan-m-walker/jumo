@@ -1,17 +1,19 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pymongo.asynchronous.collection import AsyncCollection
+from typing_extensions import Literal, TypedDict
 from jumo_server.db.mongo import db
 
-messages_collection = db["messages"]
-
-class Message(BaseModel):
+class Message(TypedDict):
     user_id: str
-    role: str
+    role: Literal["user", "assistant"]
     content: str
     created_at: datetime
 
-def save_message(message: Message):
-    messages_collection.insert_one(message.model_dump())
+messages_collection: AsyncCollection[Message] = db["messages"]
 
-def get_messages(limit: int):
-    return messages_collection.find({}).limit(limit).sort([("created_at", -1)])
+
+async def save_message(message: Message):
+    await messages_collection.insert_one(message)
+
+async def get_messages(limit: int):
+    return await messages_collection.find({}).limit(limit).sort([("created_at", -1)]).to_list()

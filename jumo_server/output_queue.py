@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import Queue
-from typing import TypedDict, Union, Literal
+from typing import Union, Literal
+from typing_extensions import TypedDict
 
 from jumo_server.chat import event_manager
 

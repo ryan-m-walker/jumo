@@ -101,22 +101,33 @@ JUMO BUILD OUTPUT HERE:
 pwd = /Users/ryan/Documents/coding/jumo/jumo_tui
 
 
-│[assistant]: <emote>THINKING</emote> Let me really analyze what makes a good memory and what we want to capture...Key│
-│aspects we should extract:1. Subject & Attribution- Who is this memory about? (Me/User/Others)- Who                  │
-│expressed/did/felt something?- Clear distinction between my experiences vs observations2. Memory Type Categories-    │
-│Preferences/Likes/Dislikes- Actions/Events- Plans/Intentions- Knowledge/Facts- Emotional responses- Project          │
-│updates/status- Relationships/Interactions- Skills/Capabilities3. Temporal Context- When did this occur?- Is it a    │
-│one-time event or recurring pattern?- Is it still relevant/current?4. Contextual Details- What was the broader       │
-│conversation topic?- What led to this memory?- What was the setting/circumstance?- Related memories or               │
-│connections<emote>CURIOUS</emote> Maybe we could structure the prompt like:```Given the following conversation,      │
-│extract key memorable information. For each memory:1. Clearly identify WHO the memory is about and their role        │
-│(Jumo/User/Other)2. Specify the TYPE of memory (preference/action/plan/etc)3. Include relevant CONTEXT that makes    │
-│this memory meaningful4. Note TEMPORAL aspects (when it occurred, if it's ongoing)5. Describe any CONNECTIONS to     │
-│other topics/memories6. Express the memory in a clear, specific statement that captures these aspectsFocus on        │
-│extracting memories that would be useful for:- Understanding recurring patterns- Maintaining conversation context-   │
-│Tracking project progress- Understanding relationships- Preserving important facts/knowledgeAvoid vague or ambiguous │
-│statements. Each memory should have clear attribution and context.```<emote>THINKING</emote> We might also want to   │
-│include examples of good vs bad memory extraction:Bad: "Likes working with Rust"Good: "User expressed preference for │
-│Rust over Python (2024-01-07) while discussing type systems, specifically noting Rust's superior generic parameter   │
-│handling"<emote>SUNGLASSES</emote> What do you think? Should we add or modify any aspects of the prompt? We could    │
-│also consider adding specific formatting requirements to make parsing the outputs easier!                            │
+# Memory notes
+
+1. Fact Memories (GPT-3.5-turbo)
+- Every exchange
+- Simple "X said/did Y" extraction
+- Quick, focused prompt
+- Immediate context preservation
+- Basic tagging (fact/statement/action)
+- facts could also be used as compression for both reducing prompt history context window and maybe even
+  be useful for buidling larger long term memories - like higher order fact memories
+
+1.b Long term facts
+- aggragate more relevant long term facts like preferences or things like that vs more temporal facts
+
+2. Short-term High Level (GPT-4)
+- Every 25-50 messages
+- Pattern recognition
+- Relationship development
+- Personal growth moments
+- Project progress
+- Emerging preferences/interests
+
+3. Higher Order Processing (GPT-4)
+- Analyzes memory outputs rather than messages
+- Looks for:
+  * Recurring patterns across multiple sessions
+  * Long-term relationship evolution
+  * Major developmental milestones
+  * Consistent preferences/traits
+  * Broader understanding of self/world
