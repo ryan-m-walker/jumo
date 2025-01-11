@@ -10,11 +10,12 @@ from jumo_server.events import event_manager
 from jumo_server.memory.manager import memory_manager
 
 from jumo_server.output_queue import OutputQueue
+from jumo_server.prompt_composer import memory_prompt_composer
 from jumo_server.prompt_composer.agent_info_prompt_composer import (
     AgentInfoPromptComposer,
 )
 from jumo_server.prompt_composer.emote_prompt_composer import EmotePromptComposer
-from jumo_server.prompt_composer.memory_prompt_composer import MemoryPromptComposer
+from jumo_server.prompt_composer.memory_prompt_composer import Mem0MemoryPromptComposer, MemoryPromptComposer
 from jumo_server.prompt_composer.note_pad_prompt_composer import NotePadPromptComposer
 from jumo_server.prompt_composer.personality_prompt_composer import (
     PersonalityPromptComposer,
@@ -62,6 +63,9 @@ async def chat(input: str):
 
     message_history.append({"role": "user", "content": query})
 
+    memory_prompt_composer = MemoryPromptComposer(query)
+    await memory_prompt_composer.prep()
+
     prompt_composer = RootPromptComposer(
         [
             AgentInfoPromptComposer(),
@@ -69,14 +73,14 @@ async def chat(input: str):
             PersonalityPromptComposer(),
             NotePadPromptComposer(),
             EmotePromptComposer(),
-            MemoryPromptComposer(query, user_id),
+            Mem0MemoryPromptComposer(query, user_id),
+            memory_prompt_composer,
         ]
     )
 
     system_prompt = prompt_composer.compose()
 
     # tools: Iterable[ToolParam] = tools.map(lambda tool: tool.json())
-
 
     stream = await anthropic_client().messages.create(
         model="claude-3-5-sonnet-latest",

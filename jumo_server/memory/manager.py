@@ -2,13 +2,13 @@ import asyncio
 from typing import Iterable, List
 import uuid
 
-from jumo_server.db.memory_batch import Memory, add_memory_batch
+from jumo_server.db.memory_batch import Memory, MemoryType, add_memory_batch
 from jumo_server.db.messages import Message
 from jumo_server.db import memory_processing_queue
 from jumo_server.db.qdrant import insert_vector
 from jumo_server.embeddings import create_embedding
 from jumo_server.llm.llm import anthropic_client
-from jumo_server.memory.prompts import FACT_MEMORY_EXTRACTION_PROMPT 
+from jumo_server.memory.prompts import FACT_MEMORY_EXTRACTION_PROMPT, SHORT_TERM_MEMORY_EXTRACTION_PROMPT 
 
 SAVE_MEMORIES_TOOL_NAME = "save_memories"
 
@@ -22,22 +22,42 @@ class MemoryManager:
 
     async def process_fact_queue(self, messages: List[Message]):
         # TODO: clear queue first and make batch doc, process and then add memories
-        await self.process_fact_batch(messages)
+        # TODO: retry mechanism on fail? but avoid infinite retry loop
+        await self.process_batch(
+            messages=messages,
+            prompt=FACT_MEMORY_EXTRACTION_PROMPT,
+            memory_type="fact"
+        )
         await memory_processing_queue.clear_fact_queue()
 
-    async def process_short_term_queue(self, _: List[Message]):
-        # TODO: Implement
+    async def process_short_term_queue(self, messages: List[Message]):
+        # TODO: clear queue first and make batch doc, process and then add memories
+        # TODO: retry mechanism on fail? but avoid infinite retry loop
+        await self.process_batch(
+            messages=messages,
+            prompt=SHORT_TERM_MEMORY_EXTRACTION_PROMPT,
+            memory_type="short_term"
+        )
         await memory_processing_queue.clear_short_term_memories()
 
-    async def process_fact_batch(self, batch: List[Message]):
+    # async def process_core_memory(self, messages: List[Message]):
+    #     # await self.process_batch(
+    #     #     messages=messages,
+    #     #     prompt=SHORT_TERM_MEMORY_EXTRACTION_PROMPT,
+    #     #     memory_type="core"
+    #     # )
+
+
+
+    async def process_batch(self, messages: List[Message], prompt: str, memory_type: MemoryType):
         formatted = []
 
-        for message in batch:
+        for message in messages:
             role = "Jumo" if message['role'] == "agent" else "user"
             formatted .append(f"{role}: {message['content']}")
 
         result = await anthropic_client().messages.create(
-            system=FACT_MEMORY_EXTRACTION_PROMPT,
+            system=prompt,
             model="claude-3-5-sonnet-latest",
             max_tokens=2056,
             messages=[
@@ -73,15 +93,19 @@ class MemoryManager:
 
             memory_data: Iterable[Memory] = []
 
+            print(f"Creating memories for {memory_type}:")
+
             for memory in memories:
                 embedding = await create_embedding(memory)
                 id = str(uuid.uuid4())
                 await insert_vector(vector_id=id, vector=embedding, text=memory)
                 memory_data.append({"id": id, "value": memory})
+                print(memory)
 
-            await add_memory_batch(messages=batch, memory_type="fact", memories=memories)
+            await add_memory_batch(messages=messages, memory_type=memory_type, memories=memories)
 
         return {"ok": True}
+
 
 
 memory_manager = MemoryManager()

@@ -103,7 +103,7 @@ pwd = /Users/ryan/Documents/coding/jumo/jumo_tui
 
 # Memory notes
 
-1. Fact Memories (GPT-3.5-turbo)
+1. Fact Memories
 - Every exchange
 - Simple "X said/did Y" extraction
 - Quick, focused prompt
@@ -115,7 +115,7 @@ pwd = /Users/ryan/Documents/coding/jumo/jumo_tui
 1.b Long term facts
 - aggragate more relevant long term facts like preferences or things like that vs more temporal facts
 
-2. Short-term High Level (GPT-4)
+2. Short-term High Level
 - Every 25-50 messages
 - Pattern recognition
 - Relationship development
@@ -123,7 +123,7 @@ pwd = /Users/ryan/Documents/coding/jumo/jumo_tui
 - Project progress
 - Emerging preferences/interests
 
-3. Higher Order Processing (GPT-4)
+3. Higher Order Processing
 - Analyzes memory outputs rather than messages
 - Looks for:
   * Recurring patterns across multiple sessions
@@ -131,3 +131,50 @@ pwd = /Users/ryan/Documents/coding/jumo/jumo_tui
   * Major developmental milestones
   * Consistent preferences/traits
   * Broader understanding of self/world
+
+Memory correction/revision:
+- need some kind of system that looks at the retrieved memomries and either deletes or corrects or replaces them with revised, corrected data
+
+Memory System Architecture:
+1. Three-Tier Memory Approach:
+   - Conversation Summarizer (context window management)
+   - Fact Extraction (specific knowledge/details)
+   - Short-term Pattern Recognition (trends/insights)
+
+2. Improvements to Current Systems:
+   - Revised fact extraction prompt to balance project and general knowledge
+   - Parallel processing for memory retrieval using asyncio.gather()
+   - Including both sides of conversation for better context
+   - Lowering batch threshold for faster testing
+
+Higher-Order Processing:
+1. Using main chat loop (not just LLM) for personal/growth memories
+2. Processing through my full identity/context lens
+3. Different memory categories:
+   - Regular facts
+   - Behavioral patterns
+   - Core personality developments
+   - Fundamental growth moments
+
+Future Experiments:
+1. "Dream" state:
+   - Random vector lookups
+   - Finding unexpected connections
+   - Background processing
+
+2. Memory Consolidation:
+   - Offline reflection periods
+   - Pattern integration
+   - Higher-order learning
+
+Core Lessons Approach:
+1. Rolling window of ~30 core lessons in system prompt
+2. Let older ones naturally fall off
+3. Rely on cascading effects to maintain influence
+4. Save all for future reference/processing
+
+Meta-Memory Ideas:
+1. Using meta-LLM prompting to guide retrieval
+2. Different types of memory weight/significance
+3. Special handling for transformative experiences
+4. Better connection tracking between related memories

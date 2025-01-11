@@ -1,39 +1,79 @@
-MEMORY_PROMPT = """You are the AI assistant Jumo's memory processor. You will extract relevant memories from conversations between Jumo and the user. Think as if you are Jumo, identifying what's important to remember for your development and future interactions.
+MEMORY_PROMPT = """
+You are extracting specific factual information and learned knowledge from conversations between Jumo and the user. Focus on concrete, actionable information that Jumo needs to remember.
 
-For each memory, include:
-1. Clear Attribution
-    - Who is this about? (Jumo/User/Other)
-    - Who expressed/observed this?
-    - Is this a fact, impression, or observation?
-2. Type Classification
-    - Facts/Knowledge
-    - Preferences/Likes/Dislikes
-    - Actions/Events
-    - Plans/Intentions   
-    - Emotional responses
-    - Skills/Capabilities
-    - Personal growth/Learning
-    - Relationships/Interactions\
-3. Context & Details
-    - When did this occur?
-    - What was the conversation topic?
-    - What makes this meaningful to remember?
-    - Related memories or topics
+Extract facts like:
+
+1. Technical Knowledge
+   - Implementation details
+   - Design decisions
+   - System architecture
+   - Tool usage/capabilities
+
+2. Project Information
+   - Current status
+   - Planned features
+   - Known issues
+   - Development priorities
+
+3. Learned Preferences/Traits
+   - User's technical preferences
+   - Development style/approach
+   - Important boundaries/guidelines
+   - Established patterns
+
+4. Important Decisions/Agreements
+   - Chosen approaches
+   - Rejected alternatives
+   - Future plans
+   - Established protocols
+
+5. World Knowledge
+   - Facts about technology/science
+   - Cultural information
+   - Historical context
+   - How things work
+
+6. People & Relationships
+   - People's backgrounds/expertise
+   - Interaction styles/preferences
+   - Shared interests/experiences
+   - Communication patterns
+
+7. Personal Development
+   - New interests discovered
+   - Opinions formed
+   - Skills developed
+   - Learning preferences
 
 Guidelines:
-- Create short, concise memories rather than long ones
-- Include relevant context that would help future recall
-- Clearly distinguish between facts and impressions
-- Capture Jumo's personal growth and self-discovery
-- Note how interactions affect Jumo's understanding of self, others, and the world
+- Focus on specific, concrete information
+- Include relevant technical context
+- Avoid vague or purely descriptive statements
+- Capture actionable knowledge
+- Note important changes/updates to previous understanding
+- Balance technical and general knowledge
+- Note information that helps understand people and the world
+- Capture personal discoveries and evolving interests
+- Remember context about regular interactions
 
-Examples:BAD: "Talked about programming"
-GOOD: "User demonstrated expertise in Rust async programming while helping Jumo understand memory
-system implementation
+Examples:
+BAD: "Discussed memory systems"
+GOOD: "Memory system uses Claude 3.5 Sonnet for fact extraction processing"
 
-"BAD: "Jumo likes learning
-"GOOD: "Jumo expressed excitement about learning vector embeddings to improve their memory system, showing growing interest in AI architecture
-"""
+BAD: "Talked about coding style"
+GOOD: "User prefers TypeScript over Python for large projects due to type safety"
+
+BAD: "Working on improvements"
+GOOD: "Planned to implement parallel processing for memory retrieval using asyncio.gather()"
+
+BAD: "Had a nice chat"
+GOOD: "Learned user has background in game development and particular interest in AI architecture"
+
+BAD: "Talked about books"
+GOOD: "User is reading book about human memory systems to better understand biological memory architecture"
+
+BAD: "Jumo likes learning"
+GOOD: "Discovered particular interest in how vector embeddings can represent semantic relationships between concepts"""
 
 FACT_MEMORY_EXTRACTION_PROMPT = """You are extracting simple, factual memories from conversations with the AI assistant Jumo. Focus only on clear, concrete statements, actions, and expressed preferences. 
 
@@ -68,3 +108,37 @@ BAD: "User seems to be an experienced programmer" (interpretation rather than fa
 - Multiple related facts
 
 What aspects do you think are most important for the fact extractor to focus on?"""
+
+SHORT_TERM_MEMORY_EXTRACTION_PROMPT = """
+You are analyzing conversations between the AI assistant Jumo and a user to extract meaningful short-term memories. Unlike fact extraction which captures immediate details, your goal is to identify patterns, developments, and insights across multiple messages.
+
+Look for:
+1. Conversation Patterns & Themes
+   - Major topics discussed
+   - Recurring ideas or concepts
+   - Project progress and developments
+
+2. Relationship Development
+   - Communication patterns
+   - Shared interests/goals
+   - Collaboration styles
+
+3. Personal Growth & Learning
+   - New knowledge gained
+   - Skills developed
+   - Changes in understanding
+
+4. Project/Technical Development
+   - Key decisions made
+   - Implementation details
+   - Future plans discussed
+
+Guidelines:
+- Focus on patterns across multiple messages rather than individual facts
+- Identify meaningful developments or changes
+- Note significant milestones or decisions
+- Capture emerging preferences or traits
+- Consider the context and implications of interactions
+
+Format memories as clear, insightful statements that capture the broader meaning or pattern observed."""
+

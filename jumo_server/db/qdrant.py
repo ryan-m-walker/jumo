@@ -1,11 +1,16 @@
 from datetime import datetime
 from typing import List
+from typing_extensions import TypedDict
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance
 
 client = AsyncQdrantClient(host="localhost", port=6333)
 
 VECTOR_DB_COLLECTION = "jumo"
+
+class MemoryData(TypedDict):
+    create_at: str
+    text: str
 
 async def initialize_qdrant_client():
     if not await client.collection_exists(VECTOR_DB_COLLECTION):

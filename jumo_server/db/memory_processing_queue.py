@@ -8,7 +8,8 @@ from jumo_server.db.mongo import db
 from jumo_server.memory.manager import memory_manager
 
 FACT_QUEUE_SIZE = 4
-SHORT_TERM_QUEUE_SIZE = 50
+# SHORT_TERM_QUEUE_SIZE = 50
+SHORT_TERM_QUEUE_SIZE = 24
 HIGHER_ORDER_QUEUE_SIZE = 100
 
 class LastProcessed(TypedDict):
