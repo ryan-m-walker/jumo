@@ -10,7 +10,6 @@ from jumo_server.events import event_manager
 from jumo_server.memory.manager import memory_manager
 
 from jumo_server.output_queue import OutputQueue
-from jumo_server.prompt_composer import memory_prompt_composer
 from jumo_server.prompt_composer.agent_info_prompt_composer import (
     AgentInfoPromptComposer,
 )
