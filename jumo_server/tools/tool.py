@@ -15,5 +15,5 @@ class Tool(Generic[InputType, OutputType], ABC):
         pass
 
     @abstractmethod
-    async def impl(self, json_buffer: InputType) -> OutputType:
+    async def impl(self, input: InputType) -> OutputType:
         pass

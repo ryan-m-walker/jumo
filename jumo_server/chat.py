@@ -27,11 +27,12 @@ from jumo_server.prompt_composer.system_info_prompt_composer import (
     SystemInfoPromptComposer,
 )
 from jumo_server.tools.set_mode import SetModeTool
+from jumo_server.tools.tool import Tool
 
 
 user_id = "ryan"
 
-tools  = [
+tools: list[Tool]  = [
     SetModeTool()
 ]
 
@@ -55,12 +56,6 @@ async def chat(input: str):
             "content": msg["content"]
         })
 
-
-    # message_history: Iterable[MessageParam] = [
-    #     {"role": msg["role"], "content": msg["content"]}
-    #     for msg in reversed(list(recent_messages))
-    # ]
-
     message_history.append({"role": "user", "content": query})
 
     memory_prompt_composer = MemoryPromptComposer(query)
@@ -79,8 +74,6 @@ async def chat(input: str):
     )
 
     system_prompt = prompt_composer.compose()
-
-    # tools: Iterable[ToolParam] = tools.map(lambda tool: tool.json())
 
     stream = await anthropic_client().messages.create(
         model="claude-3-5-sonnet-latest",
@@ -211,11 +204,11 @@ async def handle_stream(stream: AsyncStream[RawMessageStreamEvent], queue: Outpu
         main_buffer = ""
 
     if tool_id and tool_name:
-        tool_instance = next((tool for tool in tools if tool.json()["name"] == tool_name), None)
+        tool_instance = next((tool for tool in tools if tool.name == tool_name), None)
 
         # TODO: reprompt with tool result message
         # TODO: error handling
         if tool_instance:
-            await tool_instance.execute(json_buffer)
+            await tool_instance.impl(json_buffer)
 
     return full_buffer

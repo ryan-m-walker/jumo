@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TypeVar
 from openai import AsyncOpenAI
 from anthropic import NOT_GIVEN, AsyncAnthropic
 
@@ -50,10 +50,13 @@ async def query_llm(
 
     return response.content
 
+T = TypeVar("T")
+U = TypeVar("U")
+
 async def make_llm_tool_call(
     query: str,
     system: str,
-    tool: Tool,
+    tool: Tool[T, U],
     model="claude-3-5-sonnet-latest",
 ):
     response = await anthropic_client().messages.create(

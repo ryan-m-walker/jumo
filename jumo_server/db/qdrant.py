@@ -21,6 +21,7 @@ async def initialize_qdrant_client():
 
 
 
+# TODO: add memory batch id
 async def insert_vector(vector_id: str, vector: List[float], text: str):
     return await client.upsert(
         collection_name=VECTOR_DB_COLLECTION,
