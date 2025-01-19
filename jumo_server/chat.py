@@ -101,14 +101,16 @@ async def chat(input: str):
         user_id=user_id,
         role="user",
         content=query,
-        created_at=datetime.now()
+        created_at=datetime.now(),
+        system_prompt=None
     )
 
     output_message = Message(
         user_id=user_id,
         role="assistant",
         content=full_buffer,
-        created_at=datetime.now()
+        created_at=datetime.now(),
+        system_prompt=system_prompt
     )
 
     await save_message(input_message)

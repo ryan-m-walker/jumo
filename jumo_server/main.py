@@ -13,6 +13,7 @@ from jumo_server.chat import chat
 from jumo_server.db.messages import messages_collection
 from jumo_server.events import event_manager
 from jumo_server.memory.manager import memory_manager
+from jumo_server.memory.episodic.db.episodic_memory_queue import init_episodic_memory_queue
 
 
 load_dotenv()
@@ -22,6 +23,7 @@ load_dotenv()
 async def lifespan(_: FastAPI):
     await initialize_qdrant_client()
     await memory_processing_queue.init()
+    await init_episodic_memory_queue()
     yield
 
 
@@ -35,10 +37,7 @@ async def root():
 
 @app.get("/transcript")
 async def transcript():
-    messages = (
-        messages_collection.find({}).limit(
-            10).sort([("created_at", -1)]).to_list()
-    )
+    messages = await messages_collection.find({}).limit(10).sort([("created_at", -1)]).to_list()
 
     # stringify the ObjectId
     for message in messages:

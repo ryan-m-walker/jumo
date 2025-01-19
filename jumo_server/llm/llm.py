@@ -5,27 +5,27 @@ from anthropic import NOT_GIVEN, AsyncAnthropic
 from jumo_server.tools.tool import Tool
 
 
-openai = None
+_openai = None
 
 
 def openai_client():
-    global openai
+    global _openai
 
-    if openai is None:
-        openai = AsyncOpenAI()
+    if _openai is None:
+        _openai = AsyncOpenAI()
 
-    return openai
+    return _openai
 
 
-anthropic = None
+_anthropic = None
 
 def anthropic_client():
-    global anthropic
+    global _anthropic
 
-    if anthropic is None:
-        anthropic = AsyncAnthropic()
+    if _anthropic is None:
+        _anthropic = AsyncAnthropic()
 
-    return anthropic
+    return _anthropic
 
 async def query_llm(
     input: str,

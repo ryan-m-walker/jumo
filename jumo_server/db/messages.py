@@ -8,6 +8,7 @@ class Message(TypedDict):
     role: Literal["user", "assistant"]
     content: str
     created_at: datetime
+    system_prompt: str | None
 
 messages_collection: AsyncCollection[Message] = db["messages"]
 

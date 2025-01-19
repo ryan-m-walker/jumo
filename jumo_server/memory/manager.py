@@ -10,6 +10,7 @@ from jumo_server.embeddings import create_embedding
 from jumo_server.llm.llm import make_llm_tool_call
 from jumo_server.memory.prompts import FACT_MEMORY_EXTRACTION_PROMPT, SHORT_TERM_MEMORY_EXTRACTION_PROMPT
 from jumo_server.tools.save_memories import SaveMemmoriesTool 
+from jumo_server.memory.episodic import episodic_memory
 
 SAVE_MEMORIES_TOOL_NAME = "save_memories"
 
@@ -18,7 +19,8 @@ class MemoryManager:
     async def process_exchange(self, messages: List[Message]):
         await asyncio.gather(
             memory_processing_queue.push_to_facts(messages),
-            memory_processing_queue.push_to_short_term_memories(messages)
+            memory_processing_queue.push_to_short_term_memories(messages),
+            episodic_memory.process_messages(messages)
         )
 
     async def process_fact_queue(self, messages: List[Message]):
