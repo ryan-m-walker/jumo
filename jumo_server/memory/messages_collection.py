@@ -13,16 +13,3 @@ class Message(TypedDict):
 
 
 messages_collection: AsyncCollection[Message] = db["messages"]
-
-
-async def save_message(message: Message):
-    await messages_collection.insert_one(message)
-
-
-async def get_messages(limit: int):
-    return (
-        await messages_collection.find({})
-        .limit(limit)
-        .sort([("created_at", -1)])
-        .to_list()
-    )

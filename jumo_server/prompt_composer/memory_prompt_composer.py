@@ -2,16 +2,16 @@ import asyncio
 from typing import List
 
 from qdrant_client.models import ScoredPoint
-from jumo_server.db.memory_batch import Memory
 from jumo_server.db.messages import get_messages
-from jumo_server.db.qdrant import MemoryData, search_vector
-from jumo_server.embeddings import create_embedding
+from jumo_server.db.qdrant import search_vector
+from jumo_server.embeddings import Embedder
 from jumo_server.memory import memory_client
 from .prompt_composer import PromptComposer
 
 from rich.console import Console
 
 console = Console()
+embedder = Embedder()
 
 
 class Mem0MemoryPromptComposer(PromptComposer):
@@ -30,9 +30,6 @@ class Mem0MemoryPromptComposer(PromptComposer):
 
         output += "</memories>\n"
 
-        # console.print("[Memories]:", style="bold red")
-        # console.print(output, style="bold red")
-
         return output
 
 class MemoryPromptComposer(PromptComposer):
@@ -48,7 +45,7 @@ class MemoryPromptComposer(PromptComposer):
         messages_text = [message["content"] for message in messages]
         messages_text.append(self._query)
 
-        embeddings = await asyncio.gather(*[create_embedding(message) for message in messages_text])
+        embeddings = await asyncio.gather(*[embedder.embed(message) for message in messages_text])
         memory_results = await asyncio.gather(*[search_vector(embedding) for embedding in embeddings])
 
         for memory in memory_results:
@@ -66,11 +63,11 @@ class MemoryPromptComposer(PromptComposer):
 
         output += "</memories>\n"
 
-        print("\n\n")
-        print("[Memories]:")
-        for memory in self._memories:
-            if memory.payload:
-                print(memory.payload['text'])
-        print("\n\n")
+        # print("\n\n")
+        # print("[Memories]:")
+        # for memory in self._memories:
+        #     if memory.payload:
+        #         print(memory.payload['text'])
+        # print("\n\n")
 
         return output

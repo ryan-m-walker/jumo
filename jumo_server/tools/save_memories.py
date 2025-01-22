@@ -12,7 +12,7 @@ class SaveMemmoriesTool(Tool[SaveMemmoriesInput, SaveMemoriesOutput]):
     description = "Save the memories for future use. Provide a list of all memories you have extracted"
 
     async def impl(self, input: SaveMemmoriesInput) -> SaveMemoriesOutput:
-        return []
+        return input['facts']
 
     def json(self) -> ToolParam:
         return {

@@ -1,19 +1,18 @@
-import uuid
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 from jumo_server.db import memory_processing_queue
-from jumo_server.db.qdrant import initialize_qdrant_client, insert_vector, search_vector
+from jumo_server.db.graph_db import graph_db, init_graph_db
+from jumo_server.db.qdrant import initialize_qdrant_client
 from jumo_server.db.messages import get_messages
-from jumo_server.embeddings import create_embedding
-from jumo_server.memory import memory_client
-from jumo_server.chat import chat
-from jumo_server.db.messages import messages_collection
+from jumo_server.jumo import Jumo
+from jumo_server.memory.episodic import episodic_memory
 from jumo_server.events import event_manager
-from jumo_server.memory.manager import memory_manager
-from jumo_server.memory.episodic.db.episodic_memory_queue import init_episodic_memory_queue
+from jumo_server.memory.episodic.db.episodic_memory_queue import (
+    init_episodic_memory_queue,
+)
 
 
 load_dotenv()
@@ -24,7 +23,12 @@ async def lifespan(_: FastAPI):
     await initialize_qdrant_client()
     await memory_processing_queue.init()
     await init_episodic_memory_queue()
+    await graph_db.verify_connectivity()
+    await init_graph_db()
+
     yield
+
+    await graph_db.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -33,17 +37,6 @@ app = FastAPI(lifespan=lifespan)
 @app.get("/")
 async def root():
     return {"message": "Hello Jumo!"}
-
-
-@app.get("/transcript")
-async def transcript():
-    messages = await messages_collection.find({}).limit(10).sort([("created_at", -1)]).to_list()
-
-    # stringify the ObjectId
-    for message in messages:
-        message["_id"] = str(message["_id"])
-
-    return messages
 
 
 @app.websocket("/ws/{client_id}")
@@ -61,37 +54,31 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.post("/chat")
 async def send_chat_message(body: dict):
-    return await chat(body["input"])
+    jumo = Jumo()
+    response = await jumo.prompt(body["input"])
+    return {"response": response}
 
 
-@app.post("/memories/test")
-async def test_memory(body: dict):
-    return memory_client().search(query = body["query"], user_id="test_user")
+@app.post("/memory/episodic")
+async def episodic_memory_handler(body: dict):
+    messages = await get_messages(limit=int(body["size"]))
+    return await episodic_memory.process_short_term_summary_queue(messages)
 
 
-@app.post('/embedding/create')
-async def embedding_create(body: dict):
-    text = body["input"]
-    id = str(uuid.uuid4())
-
-    embedding = await create_embedding(text)
-    result = await insert_vector(vector_id=id, vector=embedding, text=text)
-
+@app.post("/graph")
+async def graph_handler():
+    jumo = Jumo()
+    result = await jumo.memory.graph_memory.extract_relationships(
+        "Becca and I have a pet cat named Sadie"
+    )
     return result
 
 
-@app.post('/embedding/search')
-async def embedding_search(body: dict):
-    text = body["input"]
-
-    embedding = await create_embedding(text)
-    result = await search_vector(vector=embedding)
-
+@app.post("/graph/search")
+async def graph_search_handler():
+    jumo = Jumo()
+    result = await jumo.memory.graph_memory.search(
+        entity_type="Person",
+        entity_id="Ryan",
+    )
     return result
-
-
-@app.post('/memory/create')
-async def memory_create(body: dict):
-    print(body['input'])
-    messages = get_messages(limit=50)
-    return await memory_manager.process_batch(messages)

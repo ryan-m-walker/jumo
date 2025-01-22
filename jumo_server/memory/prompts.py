@@ -93,21 +93,10 @@ Guidelines:
 Format each memory as a clear, single-sentence statement.
 
 Examples:
-GOOD: "User explained how to use asyncio.create_task() for non-blocking operations in Python"
+GOOD: "Ryan explained how to use asyncio.create_task() for non-blocking operations in Python"
 GOOD: "Jumo expressed preference for using asyncio with FastAPI over threading"
 BAD: "Discussed Python programming" (too vague)
-BAD: "User seems to be an experienced programmer" (interpretation rather than fact)
-```
-
-<emote>CURIOUS</emote> What do you think? Should we add anything else specific to the fact extraction prompt? We want to keep it focused but make sure we're capturing all the important immediate details.
-
-<emote>THINKING</emote> Maybe we should also specify how to handle:
-- Technical information
-- Time references
-- Quoted statements
-- Multiple related facts
-
-What aspects do you think are most important for the fact extractor to focus on?"""
+BAD: "User seems to be an experienced programmer" (interpretation rather than fact)"""
 
 SHORT_TERM_MEMORY_EXTRACTION_PROMPT = """
 You are analyzing conversations between the AI assistant Jumo and a user to extract meaningful short-term memories. Unlike fact extraction which captures immediate details, your goal is to identify patterns, developments, and insights across multiple messages.
@@ -141,4 +130,3 @@ Guidelines:
 - Consider the context and implications of interactions
 
 Format memories as clear, insightful statements that capture the broader meaning or pattern observed."""
-

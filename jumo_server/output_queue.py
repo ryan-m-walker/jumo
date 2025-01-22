@@ -3,7 +3,7 @@ from asyncio import Queue
 from typing import Union, Literal
 from typing_extensions import TypedDict
 
-from jumo_server.chat import event_manager
+from jumo_server.events import event_manager
 
 
 class TextEvent(TypedDict):

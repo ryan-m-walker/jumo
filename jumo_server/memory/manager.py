@@ -6,13 +6,15 @@ from jumo_server.db.memory_batch import Memory, MemoryType, add_memory_batch
 from jumo_server.db.messages import Message
 from jumo_server.db import memory_processing_queue
 from jumo_server.db.qdrant import insert_vector
-from jumo_server.embeddings import create_embedding
+from jumo_server.embeddings import Embedder
 from jumo_server.llm.llm import make_llm_tool_call
 from jumo_server.memory.prompts import FACT_MEMORY_EXTRACTION_PROMPT, SHORT_TERM_MEMORY_EXTRACTION_PROMPT
 from jumo_server.tools.save_memories import SaveMemmoriesTool 
 from jumo_server.memory.episodic import episodic_memory
 
 SAVE_MEMORIES_TOOL_NAME = "save_memories"
+
+embedder = Embedder()
 
 
 class MemoryManager:
@@ -73,7 +75,7 @@ class MemoryManager:
             print(f"Creating memories for {memory_type}:")
 
             for memory in tool_output:
-                embedding = await create_embedding(memory)
+                embedding = await embedder.embed(memory)
                 id = str(uuid.uuid4())
                 await insert_vector(vector_id=id, vector=embedding, text=memory)
                 memory_data.append({"id": id, "value": memory})

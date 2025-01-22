@@ -1,4 +1,5 @@
 from typing import List, TypeVar
+from anthropic.types.model_param import ModelParam
 from openai import AsyncOpenAI
 from anthropic import NOT_GIVEN, AsyncAnthropic
 
@@ -19,6 +20,7 @@ def openai_client():
 
 _anthropic = None
 
+
 def anthropic_client():
     global _anthropic
 
@@ -26,6 +28,7 @@ def anthropic_client():
         _anthropic = AsyncAnthropic()
 
     return _anthropic
+
 
 async def query_llm(
     input: str,
@@ -45,20 +48,23 @@ async def query_llm(
                 "content": input,
             }
         ],
-        tools=tool_input
+        tools=tool_input,
     )
 
     return response.content
 
+
 T = TypeVar("T")
 U = TypeVar("U")
+
 
 async def make_llm_tool_call(
     query: str,
     system: str,
     tool: Tool[T, U],
-    model="claude-3-5-sonnet-latest",
-):
+    model: ModelParam = "claude-3-5-sonnet-latest",
+) -> U | None:
+    print("BEFORE")
     response = await anthropic_client().messages.create(
         system=system,
         model=model,
@@ -70,10 +76,15 @@ async def make_llm_tool_call(
             }
         ],
         tool_choice={"type": "tool", "name": tool.name},
-        tools=[tool.json()]
+        tools=[tool.json()],
     )
 
-    tool_call = next((block for block in response.content if block.type == "tool_use"), None)
+    tool_call = next(
+        (block for block in response.content if block.type == "tool_use"), None
+    )
+
+    print("TOOL_CALL")
+    print(tool_call)
 
     # TODO: error if not called? retry?
     if tool_call:

@@ -16,6 +16,7 @@ pymongo = "^4.10.1"
 qdrant-client = "^1.12.2"
 load-dotenv = "^0.1.0"
 mem0ai = {extras = ["graph"], version = "^0.1.40"}
+neo4j = "^5.27.0"
 
 
 [build-system]
