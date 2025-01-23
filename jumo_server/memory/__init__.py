@@ -2,13 +2,12 @@ import asyncio
 from anthropic.types.message_param import MessageParam
 from mem0 import Memory as Mem0Memory
 
-from jumo_server.db.messages import Message, save_message
+from jumo_server.db.mongo.collections import message_collection, Message
 from jumo_server.embeddings import Embedder
 from jumo_server.memory.graph import GraphMemory
 from jumo_server.memory.messages_summary_collection import messages_summary_collection
-from jumo_server.memory.factual import FactualMemory
+from jumo_server.memory.summarizer import Summarizer
 from jumo_server.prompts import MEMORY_EXTRACTION_PROMPT
-from jumo_server.memory.messages_collection import messages_collection
 
 
 config = {
@@ -42,24 +41,23 @@ def memory_client():
 
 
 class Memory:
-    factual_memory = FactualMemory()
-    graph_memory = GraphMemory()
-    embedder = Embedder()
+    _graph_memory = GraphMemory()
+    _summarizer = Summarizer()
+    _embedder = Embedder()
 
     async def process_messages(self, messages: list[Message]):
         for message in messages:
             await self.process_message(message)
 
     async def process_message(self, message: Message):
-        await asyncio.gather(save_message(message), self.factual_memory.save(message))
+        await asyncio.gather(
+            message_collection.save_message(message),
+            self._summarizer.process_message(message),
+            self._graph_memory.process_message(message),
+        )
 
     async def get_recent_messages(self, limit: int = 24) -> list[Message]:
-        messages = (
-            await messages_collection.find({})
-            .sort([("created_at", -1)])
-            .limit(limit)
-            .to_list()
-        )
+        messages = await message_collection.get_messages(limit)
         return list(reversed(messages))
 
     async def get_recent_message_params(self, limit: int = 24) -> list[MessageParam]:
@@ -78,25 +76,9 @@ class Memory:
         return "\n".join(list(reversed([s["content"] for s in summaries])))
 
     async def save_message(self, message: Message):
-        await messages_collection.insert_one(message)
+        await message_collection.save_message(message)
 
-    async def search(self, query: str):
-        """
-        Returns the raw factual memory results for a given query
-        """
-        return await self.factual_memory.search(query)
-
-    async def search_formatted(self, query: str):
-        """
-        Returns factual memory formatted as a string for the LLM system prompt
-        """
-        memories = await self.factual_memory.search(query)
-        output: list[str] = []
-
-        for memory in memories:
-            if memory.payload:
-                output.append(
-                    f"<memory created_at={memory.payload['created_at']}>\n{memory.payload['content']}\n</memory>"
-                )
-
-        return "\n".join(output)
+    async def query_formatted(self, query: str) -> str:
+        summary = await self._summarizer.get_formatted()
+        graph = await self._graph_memory.query_formatted(query)
+        return "\n\n".join([summary, graph])

@@ -68,7 +68,7 @@ async def episodic_memory_handler(body: dict):
 @app.post("/graph")
 async def graph_handler():
     jumo = Jumo()
-    result = await jumo.memory.graph_memory.extract_relationships(
+    result = await jumo._memory._graph_memory.extract_relationships(
         "Becca and I have a pet cat named Sadie"
     )
     return result
@@ -77,8 +77,26 @@ async def graph_handler():
 @app.post("/graph/search")
 async def graph_search_handler():
     jumo = Jumo()
-    result = await jumo.memory.graph_memory.search(
+    result = await jumo._memory._graph_memory.search(
         entity_type="Person",
         entity_id="Ryan",
     )
     return result
+
+
+@app.post("/system_prompt")
+async def system_prompt(body: dict):
+    jumo = Jumo()
+    prompt = await jumo.get_system_prompt(body["query"])
+
+    print()
+    print("----")
+    print()
+
+    print(prompt)
+
+    print()
+    print("----")
+    print()
+
+    return {"ok": True}

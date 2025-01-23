@@ -1,9 +1,11 @@
+from typing import Any
 from jumo_server.db.graph_db import graph_db
+from jumo_server.db.mongo.collections.messages import Message
 from jumo_server.embeddings import Embedder
-from jumo_server.llm.llm import make_llm_tool_call
+from jumo_server.llm import make_llm_tool_call
 from jumo_server.memory.graph.prompts import (
     EXTRACT_ENTITIES_PROMPT,
-    EXTRACT_GRAPH_ENTITES_PROMPT,
+    get_extract_graph_entities_prompt,
 )
 from jumo_server.memory.graph.tools import (
     ExtractEntitiesTool,
@@ -14,9 +16,53 @@ from jumo_server.memory.graph.tools import (
 class GraphMemory:
     embedder = Embedder()
 
+    async def process_message(self, message: Message):
+        await self._extract_relationships(message)
+
+    async def query_formatted(self, query: str):
+        entities = await self.extract_entities(query)
+
+        print(entities)
+
+        found_entities = []
+
+        if entities:
+            for e in entities["entities"]:
+                matches = await self.search(
+                    entity_type=e["type"], entity_id=e["name"], limit=1
+                )
+
+                for match in matches:
+                    found_entities.append(match["node"])
+
+        entities_str = "\n\n".join(
+            [self._format_entity(entity) for entity in found_entities]
+        )
+
+        prefix = (
+            "## Knowledge Graph Information:\n\n"
+            "Your knowledge graph system uses a graph database to store information about entities and their relationships. "
+            "Entities and their relationships are extracted in a subconsious process and stored in the graph database. "
+            "The results here are the result of a vector similarity search in the graph database entites extracted from the input query of the current message.\n\n"
+            "### Entities:\n\n"
+        )
+
+        return prefix + entities_str
+
+    def _format_entity(self, entity: dict[str, Any]):
+        id = entity["id"]
+        output = f"#### {id}:\n\n"
+
+        for key, value in entity.items():
+            if key == "embedding":
+                continue
+            output += f"{key}: {value}\n"
+
+        return output
+
     async def search(self, entity_type: str, entity_id: str, limit: int = 10):
         search_embedding = await self.embedder.embed(
-            entity_type + ":" + entity_id, dimensions=256
+            entity_type + " " + entity_id, dimensions=256
         )
 
         async with graph_db.session() as session:
@@ -26,28 +72,33 @@ class GraphMemory:
                 WITH node, vector.similarity.cosine(node.embedding, $embedding) AS score
                 WHERE score > 0.9
                 RETURN node, score
-                ORDER BY score DESC LIMIT 10;
+                ORDER BY score DESC LIMIT $limit;
                 """,
                 embedding=search_embedding,
+                limit=limit,
             )
-
-            print(res)
 
             return await res.data()
 
-    async def extract_relationships(self, input: str):
+    async def _extract_relationships(self, message: Message):
+        speaker = "Jumo" if message["role"] == "assistant" else "Ryan"
+
         result = await make_llm_tool_call(
-            query=input,
+            query=message["content"],
             tool=ExtractGraphKnowledgeTool(),
-            system=EXTRACT_GRAPH_ENTITES_PROMPT,
+            system=get_extract_graph_entities_prompt(speaker),
         )
 
         if result:
             async with graph_db.session() as session:
                 for entity in result["entities"]:
                     head_embedding = await self.embedder.embed(
-                        entity["head_type"] + ":" + entity["head"],
+                        entity["head_type"] + " " + entity["head"],
                         dimensions=256,
+                    )
+
+                    existing_head = await self.search(
+                        entity["head_type"], entity["head"], limit=1
                     )
 
                     await session.run(
@@ -62,7 +113,7 @@ class GraphMemory:
                     )
 
                     tail_embedding = await self.embedder.embed(
-                        entity["tail_type"] + ":" + entity["tail"],
+                        entity["tail_type"] + " " + entity["tail"],
                         dimensions=256,
                     )
 
@@ -91,15 +142,6 @@ class GraphMemory:
                     )
 
         return result
-
-    # async def search(self, input: str):
-    #     result = await self.extract_entities(input)
-    #
-    #     if not result or len(result["entities"]) == 0:
-    #         return None
-    #
-    #     for entity in result["entities"]:
-    #         embedding = await self.embedder.embed(entity["type"] + ":" + entity["name"])
 
     async def extract_entities(self, input: str):
         return await make_llm_tool_call(

@@ -106,6 +106,15 @@ EXTRACT_GRAPH_ENTITES_PROMPT = (
     f"{format_examples(EXTRACT_GRAPH_ENTITIES_EXAMPLES)}\n"
 )
 
+
+def get_extract_graph_entities_prompt(speaker: str):
+    return (
+        EXTRACT_GRAPH_ENTITES_PROMPT
+        + "\n\n"
+        + f"The current speaker of the message is {speaker}. Any references to me, I or other references to the self should be assumed to be from the speaker"
+    )
+
+
 EXTRACT_ENTITIES_EXAMPLES = [
     {
         "text": (

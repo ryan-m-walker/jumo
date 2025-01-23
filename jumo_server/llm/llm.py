@@ -64,7 +64,6 @@ async def make_llm_tool_call(
     tool: Tool[T, U],
     model: ModelParam = "claude-3-5-sonnet-latest",
 ) -> U | None:
-    print("BEFORE")
     response = await anthropic_client().messages.create(
         system=system,
         model=model,
@@ -83,9 +82,5 @@ async def make_llm_tool_call(
         (block for block in response.content if block.type == "tool_use"), None
     )
 
-    print("TOOL_CALL")
-    print(tool_call)
-
-    # TODO: error if not called? retry?
     if tool_call:
         return await tool.impl(tool_call.input)

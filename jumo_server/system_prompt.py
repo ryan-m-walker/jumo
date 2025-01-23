@@ -31,7 +31,8 @@ EMOTES = [
     "CONCERNED",
 ]
 
-def get_system_prompt(summary: str, memories: str) -> str:
+
+def get_system_prompt(memories: str) -> str:
     prompt = "You are an AI named JUMO"
     prompt += "\n\n" + "\n".join(attributes)
 
@@ -55,10 +56,6 @@ def get_system_prompt(summary: str, memories: str) -> str:
     for emote in EMOTES:
         prompt += f"\n\n- {emote}"
 
-    prompt += "\n\n## Conversation History Summary\n\n"
-    prompt += summary
-
-    prompt += "\n\n## Memories\n\n"
     prompt += memories
 
     return prompt

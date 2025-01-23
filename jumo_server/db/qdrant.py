@@ -7,16 +7,25 @@ from qdrant_client.models import PointStruct, VectorParams, Distance
 qdrant_client = AsyncQdrantClient(host="localhost", port=6333)
 
 VECTOR_DB_COLLECTION = "jumo"
+SUMMARY_DB_COLLECTION = "jumo_summary"
+
 
 class MemoryData(TypedDict):
     create_at: str
     text: str
+
 
 async def initialize_qdrant_client():
     if not await qdrant_client.collection_exists(VECTOR_DB_COLLECTION):
         await qdrant_client.create_collection(
             collection_name=VECTOR_DB_COLLECTION,
             vectors_config=VectorParams(size=1536, distance=Distance.DOT),
+        )
+
+    if not await qdrant_client.collection_exists(SUMMARY_DB_COLLECTION):
+        await qdrant_client.create_collection(
+            collection_name=SUMMARY_DB_COLLECTION,
+            vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
         )
 
 
@@ -30,8 +39,9 @@ async def insert_vector(vector_id: str, vector: List[float], text: str):
                 vector=vector,
                 payload={"text": text, "created_at": datetime.now().isoformat()},
             )
-        ]
+        ],
     )
+
 
 async def search_vector(vector: List[float]):
     return await qdrant_client.search(
