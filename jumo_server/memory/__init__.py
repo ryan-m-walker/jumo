@@ -30,6 +30,8 @@ config = {
 
 memory = None
 
+MESSAGE_COUNT = 24
+
 
 def memory_client():
     global memory
@@ -56,11 +58,13 @@ class Memory:
             self._graph_memory.process_message(message),
         )
 
-    async def get_recent_messages(self, limit: int = 24) -> list[Message]:
+    async def get_recent_messages(self, limit: int = MESSAGE_COUNT) -> list[Message]:
         messages = await message_collection.get_messages(limit)
         return list(reversed(messages))
 
-    async def get_recent_message_params(self, limit: int = 24) -> list[MessageParam]:
+    async def get_recent_message_params(
+        self, limit: int = MESSAGE_COUNT
+    ) -> list[MessageParam]:
         return [
             {"role": msg["role"], "content": msg["content"]}
             for msg in await self.get_recent_messages(limit)

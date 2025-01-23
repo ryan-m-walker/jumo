@@ -19,9 +19,10 @@ class MessageSummaryCollection:
     async def save_message_summary(self, message_summary: MessageSummary):
         return await self._collection.insert_one(message_summary)
 
-    async def get_message_summaries(self, limit: int = 50):
+    async def get_message_summaries(self, limit: int = 100, skip: int = 0):
         return (
             await self._collection.find({})
+            .skip(skip)
             .limit(limit)
             .sort([("created_at", -1)])
             .to_list()

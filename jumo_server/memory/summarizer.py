@@ -17,6 +17,7 @@ from jumo_server.db.qdrant import qdrant_client
 from jumo_server.db.qdrant import SUMMARY_DB_COLLECTION
 from jumo_server.embeddings import Embedder
 from jumo_server.llm.llm import make_llm_tool_call
+from jumo_server.memory import MESSAGE_COUNT
 from jumo_server.tools.tool import Tool
 
 
@@ -147,7 +148,9 @@ class Summarizer:
         await message_summary_chunk_collection.complete(chunk["_id"])
 
     async def get_formatted(self, limit: int = 100) -> str:
-        recent_summaries = await message_summary_collection.get_message_summaries(limit)
+        recent_summaries = await message_summary_collection.get_message_summaries(
+            limit=limit, skip=MESSAGE_COUNT
+        )
 
         if not recent_summaries:
             return ""
