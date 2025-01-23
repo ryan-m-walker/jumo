@@ -8,6 +8,7 @@ from jumo_server.events import event_manager
 from jumo_server.memory.messages_collection import Message
 from jumo_server.output_queue import OutputQueue
 from jumo_server.prompt.system_prompt import get_system_prompt
+from jumo_server.prompt_composer.memory_prompt_composer import Mem0MemoryPromptComposer
 from jumo_server.stream import handle_stream
 
 
@@ -40,6 +41,7 @@ class Jumo:
             messages=messages,
             max_tokens=2024,
             system=system,
+            temperature=0.1,
         )
 
         await event_manager.broadcast_to_all({"type": "NewMessage"})
@@ -75,5 +77,6 @@ class Jumo:
         return full_buffer
 
     async def get_system_prompt(self, query: str) -> str:
+        mem0 = Mem0MemoryPromptComposer(query, "ryan")
         memories = await self._memory.query_formatted(query)
-        return get_system_prompt(memories)
+        return get_system_prompt(memories + "\n\n" + mem0.compose())

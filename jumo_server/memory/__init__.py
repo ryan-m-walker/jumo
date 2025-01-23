@@ -75,10 +75,11 @@ class Memory:
         )
         return "\n".join(list(reversed([s["content"] for s in summaries])))
 
-    async def save_message(self, message: Message):
+    async def save_message(self, message: Message) -> None:
         await message_collection.save_message(message)
 
     async def query_formatted(self, query: str) -> str:
-        summary = await self._summarizer.get_formatted()
-        graph = await self._graph_memory.query_formatted(query)
-        return "\n\n".join([summary, graph])
+        prompts = await asyncio.gather(
+            self._summarizer.get_formatted(), self._graph_memory.query_formatted(query)
+        )
+        return "\n\n".join(prompts)

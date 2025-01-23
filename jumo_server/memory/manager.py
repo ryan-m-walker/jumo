@@ -3,13 +3,16 @@ from typing import List
 import uuid
 
 from jumo_server.db.memory_batch import Memory, MemoryType, add_memory_batch
-from jumo_server.db.messages import Message
 from jumo_server.db import memory_processing_queue
+from jumo_server.db.mongo.collections.messages import Message
 from jumo_server.db.qdrant import insert_vector
 from jumo_server.embeddings import Embedder
 from jumo_server.llm.llm import make_llm_tool_call
-from jumo_server.memory.prompts import FACT_MEMORY_EXTRACTION_PROMPT, SHORT_TERM_MEMORY_EXTRACTION_PROMPT
-from jumo_server.tools.save_memories import SaveMemmoriesTool 
+from jumo_server.memory.prompts import (
+    FACT_MEMORY_EXTRACTION_PROMPT,
+    SHORT_TERM_MEMORY_EXTRACTION_PROMPT,
+)
+from jumo_server.tools.save_memories import SaveMemmoriesTool
 from jumo_server.memory.episodic import episodic_memory
 
 SAVE_MEMORIES_TOOL_NAME = "save_memories"
@@ -22,16 +25,14 @@ class MemoryManager:
         await asyncio.gather(
             memory_processing_queue.push_to_facts(messages),
             memory_processing_queue.push_to_short_term_memories(messages),
-            episodic_memory.process_messages(messages)
+            episodic_memory.process_messages(messages),
         )
 
     async def process_fact_queue(self, messages: List[Message]):
         # TODO: clear queue first and make batch doc, process and then add memories
         # TODO: retry mechanism on fail? but avoid infinite retry loop
         await self.process_batch(
-            messages=messages,
-            prompt=FACT_MEMORY_EXTRACTION_PROMPT,
-            memory_type="fact"
+            messages=messages, prompt=FACT_MEMORY_EXTRACTION_PROMPT, memory_type="fact"
         )
         await memory_processing_queue.clear_fact_queue()
 
@@ -41,33 +42,23 @@ class MemoryManager:
         await self.process_batch(
             messages=messages,
             prompt=SHORT_TERM_MEMORY_EXTRACTION_PROMPT,
-            memory_type="short_term"
+            memory_type="short_term",
         )
         await memory_processing_queue.clear_short_term_memories()
 
-    # async def process_core_memory(self, messages: List[Message]):
-    #     # await self.process_batch(
-    #     #     messages=messages,
-    #     #     prompt=SHORT_TERM_MEMORY_EXTRACTION_PROMPT,
-    #     #     memory_type="core"
-    #     # )
-
-
-    async def process_batch(self, messages: List[Message], prompt: str, memory_type: MemoryType):
+    async def process_batch(
+        self, messages: List[Message], prompt: str, memory_type: MemoryType
+    ):
         formatted = []
 
         for message in messages:
-            role = "Jumo" if message['role'] == "agent" else "user"
-            formatted .append(f"{role}: {message['content']}")
+            role = "Jumo" if message["role"] == "assistant" else "user"
+            formatted.append(f"{role}: {message['content']}")
 
         query = "Please analyze the following message:\n\n" + "\n".join(formatted)
         tool = SaveMemmoriesTool()
 
-        tool_output = await make_llm_tool_call(
-            query=query,
-            system=prompt,
-            tool=tool
-        )
+        tool_output = await make_llm_tool_call(query=query, system=prompt, tool=tool)
 
         if tool_output:
             memory_data: list[Memory] = []
@@ -82,13 +73,10 @@ class MemoryManager:
                 print(memory)
 
             await add_memory_batch(
-                messages=messages,
-                memory_type=memory_type,
-                memories=memory_data
+                messages=messages, memory_type=memory_type, memories=memory_data
             )
 
         return {"ok": True}
-
 
 
 memory_manager = MemoryManager()

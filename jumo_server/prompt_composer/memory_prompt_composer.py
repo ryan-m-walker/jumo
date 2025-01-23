@@ -2,7 +2,6 @@ import asyncio
 from typing import List
 
 from qdrant_client.models import ScoredPoint
-from jumo_server.db.messages import get_messages
 from jumo_server.db.qdrant import search_vector
 from jumo_server.embeddings import Embedder
 from jumo_server.memory import memory_client
@@ -26,12 +25,14 @@ class Mem0MemoryPromptComposer(PromptComposer):
         output += "<memories>\n"
 
         for m in memories["results"]:
-            output += f"<memory score=\"{m['score']}\" created_at=\"{m['created_at']}\" updated_at=\"{m['updated_at']}\">{m['memory']}</memory>\n"
+            output += f'<memory score="{m["score"]}" created_at="{m["created_at"]}" updated_at="{m["updated_at"]}">{m["memory"]}</memory>\n'
 
         output += "</memories>\n"
 
         return output
 
+
+# Deprecated
 class MemoryPromptComposer(PromptComposer):
     def __init__(self, query: str):
         self._query = query
@@ -40,18 +41,22 @@ class MemoryPromptComposer(PromptComposer):
     async def prep(self):
         self._memories = []
 
-        messages = await get_messages(limit=6)
+        # messages = await memor get_messages(limit=6)
+        messages = []
 
         messages_text = [message["content"] for message in messages]
         messages_text.append(self._query)
 
-        embeddings = await asyncio.gather(*[embedder.embed(message) for message in messages_text])
-        memory_results = await asyncio.gather(*[search_vector(embedding) for embedding in embeddings])
+        embeddings = await asyncio.gather(
+            *[embedder.embed(message) for message in messages_text]
+        )
+        memory_results = await asyncio.gather(
+            *[search_vector(embedding) for embedding in embeddings]
+        )
 
         for memory in memory_results:
             for m in memory:
                 self._memories.append(m)
-
 
     def compose(self) -> str:
         output = "## (New Custom Memory System): Memories are things that you remember from past interactions:\n\n"
@@ -62,12 +67,5 @@ class MemoryPromptComposer(PromptComposer):
                 output += f"<memory created_at='{m.payload['created_at']}'>{m.payload['text']}</memory>\n"
 
         output += "</memories>\n"
-
-        # print("\n\n")
-        # print("[Memories]:")
-        # for memory in self._memories:
-        #     if memory.payload:
-        #         print(memory.payload['text'])
-        # print("\n\n")
 
         return output

@@ -102,6 +102,8 @@ EXTRACT_GRAPH_ENTITES_PROMPT = (
     "Adhere to the rules strictly. Non-compliance will result in termination.\n"
     "The current speaker of the message is Ryan\n"
     '## 5. Make sure to include inverted relationships. For example, if the text says "A is B\'s pet", then the relationship should be "PET" and the inverse relationship should be "OWNER"\n'
+    "## 6. Only include entities and not states, actions, expressions or events or anything like that. Don't make this like Ryan -> Expressed -> Happiness\n"
+    "## 7. If there are no real entities with relations with extracting it is ok to return an empty array."
     "## Examples\n"
     f"{format_examples(EXTRACT_GRAPH_ENTITIES_EXAMPLES)}\n"
 )

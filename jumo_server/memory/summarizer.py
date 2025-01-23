@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing_extensions import TypedDict
 import uuid
 from bson.objectid import ObjectId
 from anthropic.types.tool_param import ToolParam
@@ -42,7 +43,11 @@ def get_system_prompt(speaker: str):
     )
 
 
-class SummaryTool(Tool[str, str]):
+class SummaryToolInput(TypedDict):
+    summary: str
+
+
+class SummaryTool(Tool[SummaryToolInput, str]):
     name = "summarize"
     description = "Write a summary for the given message."
 
@@ -60,8 +65,8 @@ class SummaryTool(Tool[str, str]):
             },
         }
 
-    async def impl(self, input: str) -> str:
-        return input
+    async def impl(self, input: SummaryToolInput) -> str:
+        return input["summary"]
 
 
 class Summarizer:
@@ -73,7 +78,7 @@ class Summarizer:
         if not summary:
             return
 
-        speaker = "Jumo" if message["role"] == "agent" else "Ryan"
+        speaker = "Jumo" if message["role"] == "assistant" else "Ryan"
 
         summary_document: MessageSummary = {
             "_id": ObjectId(),
@@ -91,11 +96,13 @@ class Summarizer:
             await self._process_queue(summaries)
 
     async def _summarize_message(self, message: Message):
-        speaker = "Jumo" if message["role"] == "agent" else "Ryan"
+        speaker = "Jumo" if message["role"] == "assistant" else "Ryan"
+
+        query = f"Please summarize the following message from {speaker}:\n\n{message['content']}"
 
         summary = await make_llm_tool_call(
             tool=SummaryTool(),
-            query=message["content"],
+            query=query,
             system=get_system_prompt(speaker),
         )
 
@@ -130,12 +137,8 @@ class Summarizer:
                     id=vector_id,
                     vector=vector,
                     payload={
-                        "chunk": chunk,
-                        "summary_ids": [summary["_id"] for summary in summaries],
-                        "message_ids": [summary["message_id"] for summary in summaries],
-                        "created_at": datetime.now().isoformat(),
-                        "start": chunk["start"],
-                        "end": chunk["end"],
+                        "text": chunk["text"],
+                        "chunk_id": str(chunk["_id"]),
                     },
                 )
             ],

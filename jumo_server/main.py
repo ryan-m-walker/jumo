@@ -6,9 +6,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from jumo_server.db import memory_processing_queue
 from jumo_server.db.graph_db import graph_db, init_graph_db
 from jumo_server.db.qdrant import initialize_qdrant_client
-from jumo_server.db.messages import get_messages
 from jumo_server.jumo import Jumo
-from jumo_server.memory.episodic import episodic_memory
 from jumo_server.events import event_manager
 from jumo_server.memory.episodic.db.episodic_memory_queue import (
     init_episodic_memory_queue,
@@ -55,20 +53,16 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/chat")
 async def send_chat_message(body: dict):
     jumo = Jumo()
+    print("HERE?")
     response = await jumo.prompt(body["input"])
+    print("DONE?")
     return {"response": response}
-
-
-@app.post("/memory/episodic")
-async def episodic_memory_handler(body: dict):
-    messages = await get_messages(limit=int(body["size"]))
-    return await episodic_memory.process_short_term_summary_queue(messages)
 
 
 @app.post("/graph")
 async def graph_handler():
     jumo = Jumo()
-    result = await jumo._memory._graph_memory.extract_relationships(
+    result = await jumo._memory._graph_memory._extract_relationships(
         "Becca and I have a pet cat named Sadie"
     )
     return result

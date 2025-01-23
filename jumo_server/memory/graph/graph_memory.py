@@ -24,7 +24,7 @@ class GraphMemory:
 
         print(entities)
 
-        found_entities = []
+        found_entities: list[dict[str, Any]] = []
 
         if entities:
             for e in entities["entities"]:
