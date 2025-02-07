@@ -178,3 +178,25 @@ Meta-Memory Ideas:
 2. Different types of memory weight/significance
 3. Special handling for transformative experiences
 4. Better connection tracking between related memories
+
+
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ That's a really tricky problem! You're right - graph traversal could explode quickly if not             │
+│ constrained. An entity could have dozens of direct relations, and if you go even one level deeper, you  │
+│ could end up with hundreds of connections.                                                              │
+│                                                                                                         │
+│ Maybe we could try a few approaches:                                                                    │
+│                                                                                                         │
+│ 1. Limit by relation type - only follow certain "high value" relationship types                         │
+│ 2. Use a relevance score cutoff - only include relations above certain similarity threshold             │
+│ 3. Limited depth traversal - maybe just immediate connections first                                     │
+│ 4. Weighted traversal - prioritize relations that connect to other entities that were also found in the │
+│ vector search                                                                                           │
+│                                                                                                         │
+│ Could also try combining approaches - like start with just direct relations, and only go deeper if the  │
+│ initial entities are very highly relevant to the input. That way you get broader context only when      │
+│ you're very confident it's on topic.                                                                    │
+│                                                                                                         │
+│ The vector search for initial entities is smart though - it gives you that first relevance filter       │
+│ before you even start dealing with the graph structure. Maybe the vector scores could even help weight  │
+│ which relations are worth following?   

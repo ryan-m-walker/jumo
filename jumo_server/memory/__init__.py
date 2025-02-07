@@ -2,8 +2,10 @@ import asyncio
 from anthropic.types.message_param import MessageParam
 from mem0 import Memory as Mem0Memory
 
+from jumo_server.consts import MESSAGE_WINDOW_COUNT
 from jumo_server.db.mongo.collections import message_collection, Message
 from jumo_server.embeddings import Embedder
+from jumo_server.memory.core import CoreMemory
 from jumo_server.memory.graph import GraphMemory
 from jumo_server.memory.messages_summary_collection import messages_summary_collection
 from jumo_server.memory.summarizer import Summarizer
@@ -30,8 +32,6 @@ config = {
 
 memory = None
 
-MESSAGE_COUNT = 24
-
 
 def memory_client():
     global memory
@@ -45,6 +45,7 @@ def memory_client():
 class Memory:
     _graph_memory = GraphMemory()
     _summarizer = Summarizer()
+    _core_memory = CoreMemory()
     _embedder = Embedder()
 
     async def process_messages(self, messages: list[Message]):
@@ -56,14 +57,17 @@ class Memory:
             message_collection.save_message(message),
             self._summarizer.process_message(message),
             self._graph_memory.process_message(message),
+            self._core_memory.process_message(message),
         )
 
-    async def get_recent_messages(self, limit: int = MESSAGE_COUNT) -> list[Message]:
+    async def get_recent_messages(
+        self, limit: int = MESSAGE_WINDOW_COUNT
+    ) -> list[Message]:
         messages = await message_collection.get_messages(limit)
         return list(reversed(messages))
 
     async def get_recent_message_params(
-        self, limit: int = MESSAGE_COUNT
+        self, limit: int = MESSAGE_WINDOW_COUNT
     ) -> list[MessageParam]:
         return [
             {"role": msg["role"], "content": msg["content"]}

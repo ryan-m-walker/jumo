@@ -1,4 +1,3 @@
-use edtui::EditorState;
 use ratatui::{buffer::Buffer, layout::Rect, widgets::Widget};
 
 struct ChatView {

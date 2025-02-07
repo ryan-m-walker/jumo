@@ -4,10 +4,12 @@ from typing_extensions import TypedDict
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import PointStruct, VectorParams, Distance
 
+from jumo_server.consts import TEST_MODE
+
 qdrant_client = AsyncQdrantClient(host="localhost", port=6333)
 
-VECTOR_DB_COLLECTION = "jumo"
-SUMMARY_DB_COLLECTION = "jumo_summary"
+VECTOR_DB_COLLECTION = "jumo" + ("_test" if TEST_MODE else "")
+SUMMARY_DB_COLLECTION = "jumo_summary" + ("_test" if TEST_MODE else "")
 
 
 class MemoryData(TypedDict):

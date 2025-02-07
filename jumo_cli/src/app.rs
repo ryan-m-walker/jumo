@@ -6,7 +6,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{palette::tailwind, Style, Stylize},
     text::{Line, Span, Text},
-    widgets::{List, ListItem, ListState, Padding, Paragraph, Wrap},
+    widgets::{Padding, Paragraph, Wrap},
     DefaultTerminal, Frame,
 };
 

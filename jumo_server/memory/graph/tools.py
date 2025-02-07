@@ -5,15 +5,20 @@ from jumo_server.tools.tool import Tool
 
 
 class ExtractGraphKnowledgeItem(TypedDict):
+    id: str
+    type: str
+
+
+class ExtractGraphKnowledgeRelationshipItem(TypedDict):
     head: str
-    head_type: str
     tail: str
-    tail_type: str
-    relation: str
+    type: str
+    inverse: str
 
 
 class ExtractGraphKnowledgeOutput(TypedDict):
     entities: list[ExtractGraphKnowledgeItem]
+    relationships: list[ExtractGraphKnowledgeRelationshipItem]
 
 
 class ExtractGraphKnowledgeTool(
@@ -28,39 +33,36 @@ class ExtractGraphKnowledgeTool(
             "description": self.description,
             "input_schema": {
                 "type": "object",
+                "required": ["entities", "relationships"],
+                "additionalProperties": False,
                 "properties": {
                     "entities": {
                         "type": "array",
                         "items": {
                             "type": "object",
+                            "required": ["id", "type"],
                             "properties": {
-                                "head": {
-                                    "type": "string",
-                                },
-                                "head_type": {
-                                    "type": "string",
-                                },
-                                "tail": {
-                                    "type": "string",
-                                },
-                                "tail_type": {
-                                    "type": "string",
-                                },
-                                "relation": {
+                                "id": {"type": "string"},
+                                "type": {
                                     "type": "string",
                                 },
                             },
-                            "required": [
-                                "head",
-                                "head_type",
-                                "tail",
-                                "tail_type",
-                                "relation",
-                            ],
+                        },
+                    },
+                    "relationships": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["head", "type", "tail", "inverse"],
+                            "properties": {
+                                "head": {"type": "string"},
+                                "tail": {"type": "string"},
+                                "type": {"type": "string"},
+                                "inverse": {"type": "string"},
+                            },
                         },
                     },
                 },
-                "required": ["entities"],
             },
         }
 

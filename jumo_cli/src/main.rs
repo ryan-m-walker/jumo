@@ -3,11 +3,8 @@ use color_eyre::eyre::Result;
 
 mod app;
 mod block;
-mod chat;
 mod colors;
 mod header;
-mod mem;
-mod state;
 
 #[tokio::main]
 async fn main() -> Result<()> {

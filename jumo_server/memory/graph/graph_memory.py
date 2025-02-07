@@ -14,15 +14,13 @@ from jumo_server.memory.graph.tools import (
 
 
 class GraphMemory:
-    embedder = Embedder()
+    _embedder = Embedder()
 
     async def process_message(self, message: Message):
         await self._extract_relationships(message)
 
     async def query_formatted(self, query: str):
         entities = await self.extract_entities(query)
-
-        print(entities)
 
         found_entities: list[dict[str, Any]] = []
 
@@ -34,6 +32,9 @@ class GraphMemory:
 
                 for match in matches:
                     found_entities.append(match["node"])
+
+        if not found_entities:
+            return ""
 
         entities_str = "\n\n".join(
             [self._format_entity(entity) for entity in found_entities]
@@ -61,7 +62,7 @@ class GraphMemory:
         return output
 
     async def search(self, entity_type: str, entity_id: str, limit: int = 10):
-        search_embedding = await self.embedder.embed(
+        search_embedding = await self._embedder.embed(
             entity_type + " " + entity_id, dimensions=256
         )
 
@@ -81,7 +82,11 @@ class GraphMemory:
             return await res.data()
 
     async def _extract_relationships(self, message: Message):
-        speaker = "Jumo" if message["role"] == "assistant" else "Ryan"
+        speaker = (
+            "Jumo (AI/Robot Assistant)"
+            if message["role"] == "assistant"
+            else "Ryan (Human User)"
+        )
 
         result = await make_llm_tool_call(
             query=message["content"],
@@ -89,16 +94,16 @@ class GraphMemory:
             system=get_extract_graph_entities_prompt(speaker),
         )
 
+        print()
+        print(result)
+        print()
+
         if result:
             async with graph_db.session() as session:
                 for entity in result["entities"]:
-                    head_embedding = await self.embedder.embed(
-                        entity["head_type"] + " " + entity["head"],
+                    head_embedding = await self._embedder.embed(
+                        entity["type"] + " " + entity["id"],
                         dimensions=256,
-                    )
-
-                    existing_head = await self.search(
-                        entity["head_type"], entity["head"], limit=1
                     )
 
                     await session.run(
@@ -107,13 +112,13 @@ class GraphMemory:
                         SET node.embedding = $embedding
                         RETURN node
                         """,
-                        labels=["Entity", entity["head_type"]],
-                        props={"id": entity["head"], "type": entity["head_type"]},
+                        labels=["Entity", entity["type"]],
+                        props={"id": entity["id"], "type": entity["type"]},
                         embedding=head_embedding,
                     )
 
-                    tail_embedding = await self.embedder.embed(
-                        entity["tail_type"] + " " + entity["tail"],
+                    tail_embedding = await self._embedder.embed(
+                        entity["type"] + " " + entity["id"],
                         dimensions=256,
                     )
 
@@ -123,11 +128,12 @@ class GraphMemory:
                         SET node.embedding = $embedding
                         RETURN node
                         """,
-                        labels=["Entity", entity["tail_type"]],
-                        props={"id": entity["tail"], "type": entity["tail_type"]},
+                        labels=["Entity", entity["type"]],
+                        props={"id": entity["id"], "type": entity["type"]},
                         embedding=tail_embedding,
                     )
 
+                for relation in result["relationships"]:
                     await session.run(
                         """
                         MATCH (head:Entity {id: $head_id})
@@ -136,9 +142,20 @@ class GraphMemory:
                         YIELD rel
                         RETURN rel
                         """,
-                        head_id=entity["head"],
-                        tail_id=entity["tail"],
-                        relation=entity["relation"],
+                        head_id=relation["head"],
+                        tail_id=relation["tail"],
+                        relation=relation["type"],
+                    )
+
+                    await session.run(
+                        """
+                        MATCH (tail:Entity {id: $tail_id})
+                        MATCH (head:Entity {id: $head_id})
+                        CALL apoc.create.relationship(tail, $inverse, {}, head)
+                        """,
+                        tail_id=relation["tail"],
+                        head_id=relation["head"],
+                        inverse=relation["inverse"],
                     )
 
         return result

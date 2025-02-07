@@ -5,6 +5,7 @@ from bson.objectid import ObjectId
 from anthropic.types.tool_param import ToolParam
 from qdrant_client.models import PointStruct
 
+from jumo_server.consts import MESSAGE_WINDOW_COUNT
 from jumo_server.db.mongo.collections import (
     Message,
     message_summary_chunk_collection,
@@ -17,7 +18,6 @@ from jumo_server.db.qdrant import qdrant_client
 from jumo_server.db.qdrant import SUMMARY_DB_COLLECTION
 from jumo_server.embeddings import Embedder
 from jumo_server.llm.llm import make_llm_tool_call
-from jumo_server.memory import MESSAGE_COUNT
 from jumo_server.tools.tool import Tool
 
 
@@ -149,8 +149,10 @@ class Summarizer:
 
     async def get_formatted(self, limit: int = 100) -> str:
         recent_summaries = await message_summary_collection.get_message_summaries(
-            limit=limit, skip=MESSAGE_COUNT
+            limit=limit, skip=MESSAGE_WINDOW_COUNT
         )
+
+        print(recent_summaries)
 
         if not recent_summaries:
             return ""
