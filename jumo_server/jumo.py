@@ -2,14 +2,12 @@ import asyncio
 from datetime import datetime
 from bson.objectid import ObjectId
 
-from jumo_server.consts import TEST_MODE
-from jumo_server.llm.llm import anthropic_client
+from jumo_server.llm.get_llm import get_llm
 from jumo_server.memory import Memory
 from jumo_server.events import event_manager
 from jumo_server.memory.messages_collection import Message
 from jumo_server.output_queue import OutputQueue
 from jumo_server.prompt.system_prompt import get_system_prompt
-from jumo_server.prompt_composer.memory_prompt_composer import Mem0MemoryPromptComposer
 from jumo_server.stream import handle_stream
 
 
@@ -31,21 +29,13 @@ class Jumo:
             "created_at": datetime.now(),
         }
 
-        messages = await self._memory.get_recent_message_params()
-        messages.append({"role": "user", "content": query})
+        llm = get_llm()
+        messages = await self._memory.get_recent_messages(limit=llm.MESSAGE_COUNT)
+        messages.append(user_message)
 
-        print("-> before")
         system = await self.get_system_prompt(query)
-        print("-> after")
 
-        stream = await anthropic_client().messages.create(
-            model="claude-3-5-sonnet-latest",
-            stream=True,
-            messages=messages,
-            max_tokens=2024,
-            system=system,
-            temperature=0.1,
-        )
+        stream = llm.stream(messages=messages, system=system)
 
         await event_manager.broadcast_to_all({"type": "NewMessage"})
 
@@ -80,6 +70,5 @@ class Jumo:
         return full_buffer
 
     async def get_system_prompt(self, query: str) -> str:
-        mem0 = "" if TEST_MODE else Mem0MemoryPromptComposer(query, "ryan").compose()
         memories = await self._memory.query_formatted(query)
-        return get_system_prompt(memories + "\n\n" + mem0)
+        return get_system_prompt(memories)

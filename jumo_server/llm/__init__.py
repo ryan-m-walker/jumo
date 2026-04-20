@@ -1,11 +1,15 @@
 from abc import ABC
-from typing import AsyncGenerator, AsyncIterator, Coroutine
-from typing_extensions import Any, Generator
+from typing import AsyncGenerator
 from jumo_server.llm.llm import make_llm_tool_call, anthropic_client, openai_client
+from jumo_server.memory.messages_collection import Message
 
 
 class LLM(ABC):
-    def stream(self, input: str) -> AsyncGenerator[str, None]:
+    MESSAGE_COUNT = 0
+
+    def stream(
+        self, messages: list[Message], system: str, temperature=0.1
+    ) -> AsyncGenerator[str, None]:
         raise NotImplementedError
 
 

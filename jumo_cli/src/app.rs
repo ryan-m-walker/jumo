@@ -263,7 +263,7 @@ impl App {
             let client = reqwest::Client::new();
 
             let res_result = client
-                .post("http://10.0.0.37:8000/chat")
+                .post("http://10.0.0.209:8000/chat")
                 .json(&body)
                 .send()
                 .await;

@@ -56,7 +56,7 @@ class Memory:
         await asyncio.gather(
             message_collection.save_message(message),
             self._summarizer.process_message(message),
-            self._graph_memory.process_message(message),
+            # self._graph_memory.process_message(message),
             self._core_memory.process_message(message),
         )
 
@@ -88,6 +88,8 @@ class Memory:
 
     async def query_formatted(self, query: str) -> str:
         prompts = await asyncio.gather(
-            self._summarizer.get_formatted(), self._graph_memory.query_formatted(query)
+            self._summarizer.get_formatted(),
+            # self._graph_memory.query_formatted(query)
         )
-        return "\n\n".join(prompts)
+        return ""
+        # return "\n\n".join(prompts)

@@ -53,19 +53,8 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/chat")
 async def send_chat_message(body: dict):
     jumo = Jumo()
-    print("HERE?")
     response = await jumo.prompt(body["input"])
-    print("DONE?")
     return {"response": response}
-
-
-@app.post("/graph")
-async def graph_handler():
-    jumo = Jumo()
-    result = await jumo._memory._graph_memory._extract_relationships(
-        "Becca and I have a pet cat named Sadie"
-    )
-    return result
 
 
 @app.post("/graph/search")
@@ -82,15 +71,4 @@ async def graph_search_handler():
 async def system_prompt(body: dict):
     jumo = Jumo()
     prompt = await jumo.get_system_prompt(body["query"])
-
-    print()
-    print("----")
-    print()
-
-    print(prompt)
-
-    print()
-    print("----")
-    print()
-
-    return {"ok": True}
+    return {"prompt": prompt}

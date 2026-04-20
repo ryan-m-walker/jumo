@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt;
 
 use crate::{
+    audio_controller::AudioController,
     emotes::get_emote,
     websocket_client::{create_ws_stream, WebSocketMessage},
 };
@@ -68,7 +69,7 @@ impl App {
     pub async fn run(&mut self) -> Result<()> {
         let mut terminal = ratatui::init();
 
-        let mut ws_stream = create_ws_stream("ws://10.0.0.37:8000/ws/jumo".to_string()).await;
+        let mut ws_stream = create_ws_stream("ws://10.0.0.209:8000/ws/jumo".to_string()).await;
 
         let period = Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND);
         let mut interval = tokio::time::interval(period);
